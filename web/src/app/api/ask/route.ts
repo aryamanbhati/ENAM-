@@ -3,7 +3,7 @@ import { z } from "zod";
 import { answer, type Scope } from "@/lib/assistant";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 60; // Hobby plan limit; the assistant budgets its own time to stay under it
 
 const Body = z.object({
   question: z.string().min(2).max(400),

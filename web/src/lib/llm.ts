@@ -36,14 +36,34 @@ async function log(step: string, model: string, tin: number, tout: number, ms: n
   } catch {}
 }
 
-/** Structured generation with fallback down the model chain on overload or rate limits. */
-export async function structured<T>(step: string, tier: "cheap" | "strong", schema: z.ZodType<T>, system: string, prompt: string): Promise<{ object: T; usage: Usage }> {
+(globalThis as { AI_SDK_LOG_WARNINGS?: boolean }).AI_SDK_LOG_WARNINGS = false;
+
+export type CallOpts = { deadline?: number; perCallMs?: number; thinking?: number };
+
+/**
+ * Structured generation with fallback down the model chain on overload or rate limits.
+ * `deadline` (epoch ms) bounds the whole call so a serverless function never times out;
+ * `thinking` caps the model's thinking tokens (0 = none) for latency-sensitive steps.
+ */
+export async function structured<T>(step: string, tier: "cheap" | "strong", schema: z.ZodType<T>, system: string, prompt: string, opts: CallOpts = {}): Promise<{ object: T; usage: Usage }> {
   let last: unknown;
+  const deadline = opts.deadline ?? Date.now() + 50_000;
   for (const name of models(tier)) {
     for (let attempt = 0; attempt < 2; attempt++) {
+      const left = deadline - Date.now();
+      if (left < 2500) throw new Error(`${step}: out of time`);
       const t0 = Date.now();
       try {
-        const r = await generateObject({ model: google(name) as LanguageModel, schema, system, prompt, temperature: 0.1, maxRetries: 1 });
+        const r = await generateObject({
+          model: google(name) as LanguageModel,
+          schema,
+          system,
+          prompt,
+          temperature: 0.1,
+          maxRetries: 0,
+          abortSignal: AbortSignal.timeout(Math.min(left, opts.perCallMs ?? left)),
+          providerOptions: opts.thinking !== undefined ? { google: { thinkingConfig: { thinkingBudget: opts.thinking } } } : undefined,
+        });
         const tin = r.usage?.inputTokens ?? 0;
         const tout = r.usage?.outputTokens ?? 0;
         log(step, name, tin, tout, Date.now() - t0);
@@ -51,8 +71,9 @@ export async function structured<T>(step: string, tier: "cheap" | "strong", sche
       } catch (e) {
         last = e;
         const msg = String((e as Error)?.message ?? e);
+        if (/abort|timeout/i.test(msg)) break; // too slow: next model in the chain
         if (/503|overloaded|UNAVAILABLE|429|RESOURCE_EXHAUSTED|quota/i.test(msg)) {
-          await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
           continue;
         }
         break; // schema or other error: try the next model
