@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { num, pct } from "@/lib/format";
+import { keptLine, num, pct } from "@/lib/format";
 import type { Company, Doc, PromiseRow, Research } from "@/lib/types";
 import { useAsk } from "./Ask";
 import { PageChip, VERDICT } from "./Badges";
@@ -56,8 +56,9 @@ export function ResearchView({ company, research: r, promises, docs }: { company
           <p className="font-serif text-xl">No explicit guidance found in the last {r.transcripts ?? 0} transcripts.</p>
         ) : (
           <>
-            <p className="font-serif text-[28px] leading-tight">
-              Kept {s.delivered ?? 0} of {total} promise{total === 1 ? "" : "s"}.
+            <p className="font-serif text-[28px] leading-tight">{keptLine(s).head}</p>
+            <p className="mt-1 text-sm text-muted">
+              {total} commitment{total === 1 ? "" : "s"} tracked{keptLine(s).sub ? `: ${keptLine(s).sub}` : ""}.
             </p>
             <div className="mt-3 flex h-2.5 overflow-hidden rounded-full bg-line" role="img" aria-label="Promise verdicts">
               {BAR_ORDER.map((v) => (s[v] ? <span key={v} className={VERDICT[v].bar} style={{ width: `${(s[v] / total) * 100}%` }} /> : null))}

@@ -97,3 +97,11 @@ def test_margin_expansion_bps_and_fy_complete():
     assert a["value"] == 120 and a["unit"] == "bps"
     assert judge("margin_expansion_bps", 120, 130, a)[0] == "delivered"
     assert fy_complete("FY27", f) and fy_complete("FY26", f) and not fy_complete("FY28", f)
+
+
+def test_unit_from_ratios():
+    from finn_worker.pipelines.enrich import unit_from_ratios
+    assert unit_from_ratios([10.0, 10.01, 9.99], "crore") == "million"
+    assert unit_from_ratios([100.0, 100.0], "crore") == "lakh"
+    assert unit_from_ratios([1.0, 0.99], "crore") == "crore"
+    assert unit_from_ratios([1.0, 1.8], "crore") == "crore"   # mixed: leave it, report the mismatch

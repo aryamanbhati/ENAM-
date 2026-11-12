@@ -116,7 +116,7 @@ def run(days: int = 3, limit: int = 60, ids: list[str] | None = None) -> dict:
     db = Db()
     gw = Gateway(db)
     since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
-    params = {"select": "id,company_id,finn_category,subcategory,category,subject,headline,pdf_url,tier,tier_source,needs_llm,trigger_eligible,reason",
+    params = {"select": "id,company_id,filed_at,finn_category,subcategory,category,subject,headline,pdf_url,tier,tier_source,needs_llm,trigger_eligible,reason",
               "summary_status": "in.(none,failed)", "tier": "neq.routine", "order": "filed_at.desc", "limit": str(limit)}
     if ids:
         params = {k: v for k, v in params.items() if k not in ("summary_status", "tier")} | {"id": f"in.({','.join(ids)})"}
@@ -173,6 +173,9 @@ def _enrich_one(db: Db, gw: Gateway, f: dict, company: str, stats: dict) -> None
             rows_, checks = results_rows(rr, pages[rr.page - 1])
             if rows_:
                 unit = "lakh" if "lakh" in rr.unit.lower() else ("million" if "million" in rr.unit.lower() else "crore")
+                unit, xcheck = screener_cross_check(db, f["company_id"], f.get("filed_at"), rows_, unit, rr.basis)
+                if xcheck:
+                    checks.append(xcheck)
                 enrichment |= {"kind": "results", "period": rr.period_label or "", "basis": rr.basis, "unit": unit,
                                "rows": rows_, "checks": checks, "guidance_line": _guidance_line(db, f["company_id"])}
                 stats["results"] += 1
@@ -194,6 +197,45 @@ def _enrich_one(db: Db, gw: Gateway, f: dict, company: str, stats: dict) -> None
     upd["enrichment"] = enrichment
     db.update("filings", {"id": f"eq.{f['id']}"}, upd)
     stats["summarised"] += 1
+
+
+SCALE = {"crore": 1.0, "million": 0.1, "lakh": 0.01}
+
+
+def unit_from_ratios(ratios: list[float], unit: str) -> str:
+    """Pure: if every extracted/screener ratio is ~10x or ~100x off, the unit was misread; return the fix."""
+    if not ratios:
+        return unit
+    for cand, scale in SCALE.items():
+        if all(abs(r * scale / SCALE[unit] - 1) <= 0.02 for r in ratios):
+            return cand
+    return unit
+
+
+def screener_cross_check(db: Db, company_id: int, filed_at: str | None, rows: list[dict], unit: str, basis: str) -> tuple[str, dict | None]:
+    """DESIGN.md 5.5: cross-check against screener. Fixes a misread unit; otherwise reports agreement."""
+    from ..sources.screener import quarter_label_to_period
+
+    if not filed_at:
+        return unit, None
+    d = datetime.fromisoformat(filed_at)
+    label = {1: f"Dec {d.year - 1}", 2: f"Dec {d.year - 1}", 3: f"Dec {d.year - 1}", 4: f"Mar {d.year}", 5: f"Mar {d.year}",
+             6: f"Mar {d.year}", 7: f"Jun {d.year}", 8: f"Jun {d.year}", 9: f"Jun {d.year}", 10: f"Sep {d.year}",
+             11: f"Sep {d.year}", 12: f"Sep {d.year}"}[d.month]
+    period = quarter_label_to_period(label)
+    facts = {f["metric"]: float(f["value"]) for f in db.select("facts", {
+        "select": "metric,value", "company_id": f"eq.{company_id}", "period": f"eq.{period}", "extractor": "eq.screener"})}
+    keys = {"Revenue": "revenue", "PBT": "pbt", "PAT": "pat"}
+    pairs = [(r["current"] * SCALE[unit], facts[keys[r["metric"]]]) for r in rows if keys.get(r["metric"]) in facts and facts[keys[r["metric"]]]]
+    if not pairs:
+        return unit, None
+    fixed = unit_from_ratios([a / b for a, b in pairs], unit)
+    if fixed != unit:
+        return fixed, {"name": "unit", "ok": True, "detail": f"Unit corrected to {fixed} after cross-checking with screener"}
+    agree = sum(abs(a - b) <= max(0.01 * abs(b), 1) for a, b in pairs)
+    ok = agree == len(pairs)
+    detail = "Matches screener's quarterly table" if ok else f"{len(pairs) - agree} of {len(pairs)} figures differ from screener's {basis if basis == 'consolidated' else 'consolidated'} table"
+    return unit, {"name": "screener", "ok": ok, "detail": detail}
 
 
 def _guidance_line(db: Db, company_id: int) -> str | None:

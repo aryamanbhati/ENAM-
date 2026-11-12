@@ -4,7 +4,7 @@ import { AskScopeSetter } from "@/components/Ask";
 import { Move, TierBadge, VERDICT } from "@/components/Badges";
 import { Masthead } from "@/components/Masthead";
 import { Sparkline } from "@/components/Sparkline";
-import { categoryLabel, cleanSubject, relTime, shortName } from "@/lib/format";
+import { categoryLabel, cleanSubject, keptLine, relTime, shortName } from "@/lib/format";
 import { companyBySymbol, companyFilings, marketState, portfolio, research } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -69,9 +69,7 @@ export default async function CompanyHub({ params }: { params: Promise<{ symbol:
         <h2 className="text-xs font-medium uppercase tracking-wide text-muted">Promised vs delivered</h2>
         {r?.status === "ready" && r.scorecard ? (
           <>
-            <p className="mt-2 font-serif text-xl">
-              Kept {r.scorecard.delivered ?? 0} of {r.scorecard.total ?? 0} promises.
-            </p>
+            <p className="mt-2 font-serif text-xl">{keptLine(r.scorecard).head}</p>
             <ul className="mt-2 space-y-1 text-sm">
               {top.map((p) => (
                 <li key={p.id} className="flex gap-2">

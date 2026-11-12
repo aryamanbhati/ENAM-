@@ -82,3 +82,19 @@ export function cleanSubject(s: string | null | undefined): string {
 
 export const WINDOWS = { "24h": 24, "7d": 24 * 7, "30d": 24 * 30 } as const;
 export type WindowKey = keyof typeof WINDOWS;
+
+/** Scorecard headline: only promises that can be judged count toward "kept". */
+export function keptLine(s: Record<string, number> | null | undefined): { head: string; sub: string } {
+  const g = (k: string) => (s?.[k] ?? 0);
+  const judged = g("delivered") + g("partly") + g("missed");
+  const parts: string[] = [];
+  if (g("dropped")) parts.push(`${g("dropped")} quietly dropped`);
+  if (g("too_early")) parts.push(`${g("too_early")} too early to judge`);
+  if (g("not_measurable")) parts.push(`${g("not_measurable")} not measurable`);
+  const sub = parts.join(", ");
+  if (!g("total")) return { head: "No explicit guidance found.", sub: "" };
+  if (judged === 0) return { head: g("dropped") ? `${g("dropped")} of ${g("total")} promises quietly dropped.` : "Nothing can be judged yet.", sub };
+  const kept = g("delivered");
+  const partly = g("partly") ? `, ${g("partly")} partly` : "";
+  return { head: `Kept ${kept} of ${judged} promise${judged === 1 ? "" : "s"} that can be judged${partly}.`, sub };
+}

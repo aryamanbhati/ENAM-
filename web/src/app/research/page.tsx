@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AskScopeSetter } from "@/components/Ask";
 import { Masthead } from "@/components/Masthead";
 import { TickerSearch } from "@/components/TickerSearch";
-import { shortName } from "@/lib/format";
+import { keptLine, shortName } from "@/lib/format";
 import { researchedCompanies } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -32,9 +32,7 @@ export default async function ResearchIndex() {
               </span>
               <span className="shrink-0 text-right text-xs text-muted">
                 {r.status === "ready" && r.scorecard ? (
-                  <span className="font-serif text-base text-ink">
-                    Kept {r.scorecard.delivered ?? 0} of {r.scorecard.total ?? 0}
-                  </span>
+                  <span className="block max-w-[11rem] font-serif text-sm leading-snug text-ink">{keptLine(r.scorecard).head}</span>
                 ) : r.status === "no_guidance" ? (
                   "No explicit guidance"
                 ) : r.status === "running" ? (
