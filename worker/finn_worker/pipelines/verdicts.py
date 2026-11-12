@@ -13,14 +13,22 @@ from __future__ import annotations
 
 import re
 
-COMPUTABLE = {"revenue_growth", "profit_growth", "ebitda_margin", "ebit_margin", "revenue_absolute"}
+COMPUTABLE = {"revenue_growth", "profit_growth", "ebitda_margin", "ebit_margin", "revenue_absolute", "margin_expansion_bps"}
 METHOD = {
     "revenue_growth": "Revenue growth over the same quarters a year earlier, from quarterly results",
     "profit_growth": "Net profit growth over the same quarters a year earlier, from quarterly results",
     "ebitda_margin": "Operating profit divided by revenue, from quarterly results",
     "ebit_margin": "Operating profit minus depreciation, divided by revenue, from quarterly results",
     "revenue_absolute": "Sum of the year's quarterly revenue, from quarterly results",
+    "margin_expansion_bps": "Change in operating margin over the same quarters a year earlier, from quarterly results",
 }
+
+
+def fy_complete(fy: str | None, facts: dict[tuple[str, str], float]) -> bool:
+    """True when all four quarters of the fiscal year are reported: the deadline has passed."""
+    if not fy or not re.match(r"FY\d\d$", fy):
+        return False
+    return all((q, "revenue") in facts for q in fy_quarters(fy))
 
 
 def fy_quarters(fy: str) -> list[str]:
@@ -61,6 +69,13 @@ def actual_for(category: str, fy: str, facts: dict[tuple[str, str], float]) -> d
                 return None
             op -= dep
         return {"value": round(op / rev * 100, 1), "unit": "pct", "quarters": qs, "complete": complete}
+    if category == "margin_expansion_bps":
+        prior = [q.replace(fy, prev_fy(fy)) for q in qs]
+        rev, op = _sum(facts, "revenue", qs), _sum(facts, "operating_profit", qs)
+        rev0, op0 = _sum(facts, "revenue", prior), _sum(facts, "operating_profit", prior)
+        if not rev or not rev0 or op is None or op0 is None:
+            return None
+        return {"value": round((op / rev - op0 / rev0) * 10000), "unit": "bps", "quarters": qs, "complete": complete}
     if category == "revenue_absolute":
         rev = _sum(facts, "revenue", qs)
         if rev is None:
@@ -75,6 +90,8 @@ def judge(category: str, low: float, high: float | None, actual: dict) -> tuple[
     v = actual["value"]
     if category in ("ebitda_margin", "ebit_margin"):
         gap_ok, partly_ok = v >= low, v >= low - 1.0              # within 1 point counts as partly
+    elif category == "margin_expansion_bps":
+        gap_ok, partly_ok = v >= low, v >= 0.5 * low                # at least half the promised expansion
     elif category == "revenue_absolute" and not actual["complete"]:
         frac = len(actual["quarters"]) / 4                        # compare against pro-rata target
         gap_ok, partly_ok = v >= low * frac, v >= 0.85 * low * frac
@@ -92,13 +109,15 @@ def fmt(v: float, unit: str) -> str:
         return f"{v:g}%"
     if unit == "rs_cr":
         return f"Rs {v:,.0f} cr"
+    if unit == "bps":
+        return f"{v:+g} bps" if v < 0 else f"{v:g} bps"
     return f"{v:g}"
 
 
 def status_line(category: str, low: float, high: float | None, actual: dict, verdict: str) -> str:
     target = fmt(low, actual["unit"]) if high in (None, low) else f"{low:g} to {fmt(high, actual['unit'])}"
     what = {"revenue_growth": "growth", "profit_growth": "profit growth", "ebitda_margin": "margin",
-            "ebit_margin": "EBIT margin", "revenue_absolute": "revenue"}[category]
+            "ebit_margin": "EBIT margin", "revenue_absolute": "revenue", "margin_expansion_bps": "margin expansion"}[category]
     n = len(actual["quarters"])
     so_far = f" after {n} quarter{'s' if n != 1 else ''}" if not actual["complete"] else ""
     verb = "tracking" if verdict == "too_early" else "delivered"

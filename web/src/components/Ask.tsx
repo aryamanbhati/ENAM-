@@ -137,7 +137,7 @@ function AskBar() {
         ask(q);
         setQ("");
       }}
-      className="fixed inset-x-0 bottom-[calc(52px+env(safe-area-inset-bottom))] z-30 px-4 pb-2"
+      className="fixed inset-x-0 bottom-[calc(52px+env(safe-area-inset-bottom))] z-[45] px-4 pb-2"
     >
       <div className="mx-auto flex max-w-md items-center gap-2 rounded-full border border-line bg-surface px-4 py-2 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
         <input

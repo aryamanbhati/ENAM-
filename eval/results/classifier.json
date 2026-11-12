@@ -1,0 +1,74 @@
+{
+ "n": 99,
+ "labels": "material vs routine, labelled by the developer using the reference categories",
+ "rules_accuracy": 0.909,
+ "rules_errors_upward": 8,
+ "rules_errors_downward": 1,
+ "final_accuracy": 0.919,
+ "final_errors_upward": 7,
+ "final_errors_downward": 1,
+ "tier_sources": {
+  "rule": 64,
+  "trigger": 33,
+  "llm": 2
+ },
+ "misses": [
+  {
+   "id": "8da97476-cb25-45d3-a4cc-53ef9e90f8bf",
+   "subcategory": "General",
+   "subject": "Update On Institutional Investors'' Meeting - J.P. Morgan India Conference 2026",
+   "truth": "routine",
+   "pred": "material"
+  },
+  {
+   "id": "1ee21456-900d-4569-95b2-6e286e6f3ef5",
+   "subcategory": "General",
+   "subject": "Investor Conference",
+   "truth": "routine",
+   "pred": "material"
+  },
+  {
+   "id": "22188a23-7a36-47e6-bd86-7ab1bed25919",
+   "subcategory": "General",
+   "subject": "Second Reminder Notice For Payment Of First And Final Call On Partly Paid-Up Equity Shares Of Bharti Airtel Limited ('Co",
+   "truth": "routine",
+   "pred": "material"
+  },
+  {
+   "id": "2e8d2bdf-9c2e-4701-a9d4-0a105d4f52bf",
+   "subcategory": "Half Yearly Report (SEBI Circular No. CIR/IMD/DF-1/67/2017)",
+   "subject": "Compliances-Half Yearly Report (SEBI Circular No. CIR/IMD/DF-1/67/2017)",
+   "truth": "routine",
+   "pred": "material"
+  },
+  {
+   "id": "d6bab95e-f802-44e9-befa-9f21ac8aa4bf",
+   "subcategory": "Dividend Updates",
+   "subject": "Announcement under Regulation 30 (LODR)-Dividend Updates",
+   "truth": "material",
+   "pred": "routine"
+  },
+  {
+   "id": "f148536c-69d2-43a7-b386-b575ac7387b9",
+   "subcategory": "Amendments to Memorandum & Articles of Association",
+   "subject": "Announcement under Regulation 30 (LODR)-Amendments to Memorandum & Articles of Association",
+   "truth": "routine",
+   "pred": "material"
+  },
+  {
+   "id": "9a29605f-e804-46f7-99a9-238713497628",
+   "subcategory": "Allotment of Equity Shares",
+   "subject": "Announcement under Regulation 30 (LODR)-Allotment",
+   "truth": "routine",
+   "pred": "material"
+  },
+  {
+   "id": "15c8ef6f-e5b2-42b1-bb4a-512d26ce6b79",
+   "subcategory": "Scheme of Arrangement",
+   "subject": "Announcement under Regulation 30 (LODR)-Scheme of Arrangement",
+   "truth": "routine",
+   "pred": "material"
+  }
+ ],
+ "generated_at": "2026-11-12T19:16:47.469106+00:00"
+}

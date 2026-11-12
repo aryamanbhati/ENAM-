@@ -6,6 +6,7 @@ import type { Item, Tier } from "@/lib/types";
 import { AskScopeSetter } from "./Ask";
 import { Move } from "./Badges";
 import { DetailStack } from "./DetailStack";
+import { ListenBriefing } from "./ListenBriefing";
 import { Chevron } from "./icons";
 
 export type TodayProps = {
@@ -77,11 +78,20 @@ export function TodayView(props: TodayProps) {
             </Link>
           ))}
         </div>
-        {n > 0 && (
-          <button onClick={() => setOpen({ tier: "needs_you", index: 0 })} className="text-xs font-medium">
-            Start briefing →
-          </button>
-        )}
+        <div className="flex items-center gap-4">
+          <ListenBriefing
+            lines={[
+              summary,
+              ...tiers.needs_you.slice(0, 6).map((i) => `${shortName(i.company.name)}: ${itemTitle(i)}`),
+              tiers.worth_knowing.length ? `Plus ${tiers.worth_knowing.length} items worth knowing.` : "",
+            ].filter(Boolean)}
+          />
+          {n > 0 && (
+            <button onClick={() => setOpen({ tier: "needs_you", index: 0 })} className="text-xs font-medium">
+              Start briefing →
+            </button>
+          )}
+        </div>
       </div>
 
       {upcoming.length > 0 && (

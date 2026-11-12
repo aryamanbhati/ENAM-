@@ -147,9 +147,26 @@ async function fundamentalsAgent(scope: Scope, query: string): Promise<Source[]>
 const NUM = /(?<![\w.])\d[\d,]*(?:\.\d+)?/g;
 
 /** Verifier: keep only sentences that cite valid ids and whose numbers appear in the cited sources. */
+/** Normalise citation styles the model may use: [s1, s2], [s1; s2], (s1), [S1] -> [s1][s2]. */
+export function normaliseCitations(text: string): string {
+  return text
+    .replace(/[[(]\s*((?:[sS]\d+\s*[,;&]?\s*(?:and\s*)?)+)[\])]/g, (_, ids: string) =>
+      ids
+        .split(/[\s,;&]+|and/)
+        .filter(Boolean)
+        .map((i) => `[${i.toLowerCase()}]`)
+        .join(""),
+    )
+    .replace(/\s+([.!?])/g, "$1");
+}
+
 export function verify(answer: string, sources: Source[]): { text: string; removed: number; used: string[] } {
+  answer = normaliseCitations(answer);
+  // Move citations that sit after the full stop back inside the sentence they belong to.
+  answer = answer.replace(/([.!?])((?:\s*\[[a-z]\d+\])+)/g, "$2$1");
   const byId = new Map(sources.map((s) => [s.id, s]));
-  const sentences = answer.match(/[^.!?]+[.!?]+(\s*\[[a-z]\d+\])*|\S[^.!?]*$/g) ?? [answer];
+  // Split only at sentence ends (punctuation, space, capital), never inside decimals like 2.31.
+  const sentences = answer.split(/(?<=[.!?])\s+(?=[A-Z"'(₹])/);
   const kept: string[] = [];
   let removed = 0;
   const used = new Set<string>();

@@ -86,3 +86,14 @@ def test_quote_verification():
     assert quote_on_page("We expect margins of 30% next year.", pages, 2)[0] is False
     assert number_in_text(18, "growth of 18 to 20%") and not number_in_text(15, "growth of 18 to 20%")
     assert number_in_text(1200, "capex of Rs 1,200 crore")
+
+
+def test_margin_expansion_bps_and_fy_complete():
+    from finn_worker.pipelines.verdicts import fy_complete
+    f = facts_for([100] * 4, [100] * 4, op_new=[12, 12, 12, 12])
+    for i in range(4):
+        f[(f"Q{i + 1} FY26", "operating_profit")] = 10.8
+    a = actual_for("margin_expansion_bps", "FY27", f)
+    assert a["value"] == 120 and a["unit"] == "bps"
+    assert judge("margin_expansion_bps", 120, 130, a)[0] == "delivered"
+    assert fy_complete("FY27", f) and fy_complete("FY26", f) and not fy_complete("FY28", f)

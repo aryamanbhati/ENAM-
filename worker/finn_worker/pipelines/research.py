@@ -264,8 +264,14 @@ def _run(db: Db, gw: Gateway, progress: Progress, symbol: str, force: bool) -> d
                "timeframe": fy, "target_low": low, "target_high": high, "mention_periods": mention_periods,
                "silent": V.silent_periods(mention_periods, periods)}
         unit = (latest.get("currency_or_unit") or "").lower()
+        if cat in ("ebitda_margin", "ebit_margin") and ("bps" in unit or "basis" in unit):
+            cat = "margin_expansion_bps"   # "expand margins by 120 to 130 bps" is a change, not a level
+        elif cat in ("ebitda_margin", "ebit_margin") and low is not None and low > 60:
+            cat = "other"                  # not a plausible margin level; never compare it with one
+        rec["category"] = cat
         computable = (cat in V.COMPUTABLE and bool(fy) and low is not None and latest.get("scope") == "company"
                       and (cat != "revenue_absolute" or unit in ("rs_cr", "inr crore", "crore")))
+        passed = V.fy_complete(fy, facts)
         actual = V.actual_for(cat, fy, facts) if computable else None
         if actual:
             verdict, tracking = V.judge(cat, low, high, actual)
@@ -274,7 +280,7 @@ def _run(db: Db, gw: Gateway, progress: Progress, symbol: str, force: bool) -> d
                     "verdict_reason": None}
             if verdict == "too_early" and V.is_dropped(mention_periods, periods, tracking):
                 rec["verdict"], rec["status_line"] = "dropped", rec["status_line"] + ", no longer mentioned"
-        elif V.is_dropped(mention_periods, periods, None):
+        elif not passed and V.is_dropped(mention_periods, periods, None):
             last = mention_periods[-1]
             rec |= {"verdict": "dropped", "status_line": f"Last mentioned in {last}, silent since",
                     "verdict_reason": f"Stated in {mention_periods[0]}, not mentioned in {', '.join(rec['silent'])}."}
@@ -341,6 +347,7 @@ def _run(db: Db, gw: Gateway, progress: Progress, symbol: str, force: bool) -> d
 
     score = {k: sum(1 for r in computed if r["verdict"] == k) for k in order}
     score["total"] = len(computed)
+    score["quotes_verified"], score["quotes_dropped"] = len(items), dropped
     one_ok, one_page = quote_like(cards.one_liner, latest_pages, cards.one_liner_page)
     db.upsert("research", [{
         "company_id": cid, "status": "ready", "doc_set_hash": doc_hash, "transcripts": len(transcripts),

@@ -44,12 +44,16 @@ If a task would add breadth at the cost of depth or stability, stop and ask.
 ## Commands
 
 ```
-# worker
-cd worker && .venv/Scripts/python -m finn_worker.cli ingest-filings [--since ISO] [--symbols A B] [--dry-run] [--retier] [--out file.json]
-pytest  # from worker/
-python -m finn_worker.cli ingest-eod
-python -m finn_worker.cli research <NSE_SYMBOL> [--job-id ID]
-python -m finn_worker.cli eval <classifier|promises|results>
+# worker (from worker/, venv at .venv)
+python -m finn_worker.cli ingest-filings [--since ISO] [--symbols A B] [--dry-run] [--retier] [--out file.json]
+python -m finn_worker.cli ingest-eod [--backfill-days N] [--period 3mo]
+python -m finn_worker.cli enrich [--days 3] [--limit 60] [--ids ID ...]
+python -m finn_worker.cli research <NSE_SYMBOL> [--job-id ID] [--force]
+python -m finn_worker.cli calendar
+python -m finn_worker.cli push [--digest]
+python -m finn_worker.cli eval <classifier|results|promises|cost|all>
+python -m finn_worker.cli migrate            # needs DATABASE_URL
+pytest
 
 # web
 cd web && npm run dev

@@ -49,6 +49,9 @@ def main(argv: list[str] | None = None) -> int:
     pu = sub.add_parser("push", help="Send web push for alerts not yet pushed")
     pu.add_argument("--digest", action="store_true", help="Also send the morning digest")
 
+    ev = sub.add_parser("eval", help="Run an evaluation and write eval/results/<name>.json")
+    ev.add_argument("name", choices=["classifier", "results", "promises", "cost", "all"])
+
     mg = sub.add_parser("migrate", help="Apply supabase/migrations/*.sql not yet applied (needs DATABASE_URL)")
     mg.add_argument("--mark-applied", nargs="*", default=[], help="Record these files as applied without running them")
 
@@ -75,6 +78,14 @@ def main(argv: list[str] | None = None) -> int:
         from .pipelines.enrich import run as run_enrich
 
         print(json.dumps(run_enrich(args.days, args.limit, args.ids), indent=1))
+        return 0
+    if args.cmd == "eval":
+        from .evaluate import run as run_eval
+
+        names = ["classifier", "results", "promises", "cost"] if args.name == "all" else [args.name]
+        for n in names:
+            out = run_eval(n)
+            print(n, json.dumps({k: v for k, v in out.items() if k not in ("detail", "misses", "by_step", "companies")}, default=str))
         return 0
     if args.cmd == "calendar":
         from .pipelines.calendar import run as run_calendar

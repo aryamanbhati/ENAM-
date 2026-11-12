@@ -305,9 +305,9 @@ Stored in `/eval`, numbers quoted in the writeup.
 
 ## 8. Open decisions
 
-- Model providers and keys (ask the user when first needed).
-- Portfolio: draft of 19 in `supabase/seed.sql`, awaiting user approval (see decisions log, 12 Nov).
-- Research demo set of 3 to 5 companies.
+- Model providers and keys: decided, Gemini free tier (decisions log, 13 Nov).
+- Portfolio: 19 companies in `supabase/seed.sql` (decisions log, 12 Nov).
+- Research demo set: DIXON, PERSISTENT, KPITTECH, SUZLON, POLYCAB (decisions log, 13 Nov).
 - Companion reference document: added as `docs/reference.pdf`; its categories are the FINN taxonomy in the rules tier.
 
 ## 9. Decisions log
@@ -332,3 +332,13 @@ Stored in `/eval`, numbers quoted in the writeup.
 | 12 Nov | Worker on Python 3.12 (what is installed locally), pinned in Actions. |
 | 12 Nov | Confirmed BSE accepts requests from GitHub Actions runners via the `bse` package, so the filings cron needs no other host. 30-day backfill: 335 filings, 63 needs you, 140 worth knowing, 132 routine. |
 | 12 Nov | Supabase new key format (`sb_publishable_`, `sb_secret_`) instead of legacy JWT keys, which retire in early 2027. Repo private during the build, public before submission. |
+| 13 Nov | Models: Gemini only, free tier. Cheap `gemini-3.5-flash-lite` (fallback 3.1-flash-lite, 3.5-flash), strong `gemini-3.6-flash` (fallbacks down the Flash line; the free tier has no Pro quota), embeddings `gemini-embedding-001` at 768 dims. Chains live in env and fall through on 503/429. Actual spend is zero; `llm_calls` records list-price cost for the writeup. |
+| 13 Nov | Worker calls Gemini REST directly instead of LiteLLM: one provider, two endpoints, fewer dependencies; swapping providers touches one file. The web side uses the Vercel AI SDK as planned. |
+| 13 Nov | Linking promises across calls: one cheap-model call over all verified commitments instead of embedding similarity plus confirmation. Cheaper (one call per company) and fewer moving parts at 10 to 40 items. |
+| 13 Nov | Research reads the last 6 transcripts (not 4) so that the previous fiscal year's guidance can be judged against a complete year of results. |
+| 13 Nov | "Quietly dropped" needs two consecutive silent calls, or one silent call while the numbers are behind; never when on track or ahead, and never once the deadline year is complete (that gets a real verdict). |
+| 13 Nov | Commitments carry a scope (company vs segment). Only company-wide targets are compared with reported totals; segment targets go to the evidence-based qualitative judge. Margin targets in basis points are measured as a change, not a level. |
+| 13 Nov | Summaries for Worth knowing filings are generated eagerly in the worker (not lazily on tap), because PDF parsing lives in the worker. Still cheap-model and cached. |
+| 13 Nov | The web re-applies the user's current triggers to stored tiers (`trigger_eligible`), so turning an alert off moves items immediately; it never hides them. |
+| 13 Nov | Push: alerts older than 6 hours are marked sent without notifying, so backfills never flood a phone. Morning digest rides the 08:00 IST cron. |
+| 13 Nov | Research demo set: DIXON, PERSISTENT, KPITTECH, SUZLON (in portfolio) and POLYCAB (outside it). |
