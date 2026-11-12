@@ -19,6 +19,14 @@ def env(name: str, default: str | None = None) -> str | None:
     return value if value else default
 
 
-SUPABASE_URL = env("SUPABASE_URL")
+def _project_url(url: str | None) -> str | None:
+    """Accept the bare project URL or the Data API URL ending in /rest/v1."""
+    if not url:
+        return None
+    url = url.strip().rstrip("/")
+    return url[: -len("/rest/v1")] if url.endswith("/rest/v1") else url
+
+
+SUPABASE_URL = _project_url(env("SUPABASE_URL"))
 SUPABASE_SERVICE_ROLE_KEY = env("SUPABASE_SERVICE_ROLE_KEY")
 USER_AGENT = env("FINN_USER_AGENT", "FINN-research-prototype/0.1")

@@ -14,11 +14,11 @@ class Db:
         key = key or config.SUPABASE_SERVICE_ROLE_KEY
         if not url or not key:
             raise RuntimeError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set (see .env.example)")
-        self._c = httpx.Client(
-            base_url=f"{url.rstrip('/')}/rest/v1",
-            headers={"apikey": key, "Authorization": f"Bearer {key}", "Content-Type": "application/json"},
-            timeout=30,
-        )
+        headers = {"apikey": key, "Content-Type": "application/json"}
+        if not key.startswith("sb_"):
+            # Legacy JWT keys also go in Authorization. New sb_secret_ keys are not JWTs: apikey alone.
+            headers["Authorization"] = f"Bearer {key}"
+        self._c = httpx.Client(base_url=f"{url.rstrip('/')}/rest/v1", headers=headers, timeout=30)
 
     def select(self, table: str, params: dict[str, str] | None = None) -> list[dict[str, Any]]:
         r = self._c.get(f"/{table}", params=params or {"select": "*"})
