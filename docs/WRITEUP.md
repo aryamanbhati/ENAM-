@@ -34,8 +34,8 @@ FINN answers one question first: does anything need me? Everything else is filte
 |---|---|
 | Filing classifier, 99 labelled filings | Rules alone 90.9%, rules plus model 91.9%; errors 7 upward, 1 downward |
 | Results numbers vs screener | 78.6% within 1% before the screener cross-check, 84% after; the rest are standalone vs consolidated or definition differences |
-| Promise quotes verified on their page | see `eval/results/promises.json` |
-| Cost | see `eval/results/cost.json` |
+| Promise quotes verified on their page | 86.5% pass; the rest are dropped before anyone sees them (6 companies) |
+| Cost | $0 actual (free tier); about $0.04 per research run and $0.32 for the whole build's 285 model calls at paid list prices; 24% of calls served from cache |
 
 Labels were written by me (the developer) using the reference categories; promise recall would need independent hand labels.
 

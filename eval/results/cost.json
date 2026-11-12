@@ -1,0 +1,104 @@
+{
+ "by_step": {
+  "assistant.composer": {
+   "calls": 5,
+   "cache_hits": 0,
+   "tokens_in": 14840,
+   "tokens_out": 4475,
+   "cost_usd": 0.0151
+  },
+  "assistant.router": {
+   "calls": 8,
+   "cache_hits": 0,
+   "tokens_in": 1405,
+   "tokens_out": 393,
+   "cost_usd": 0.0003
+  },
+  "debug": {
+   "calls": 1,
+   "cache_hits": 1,
+   "tokens_in": 0,
+   "tokens_out": 0,
+   "cost_usd": 0.0
+  },
+  "filings.people": {
+   "calls": 4,
+   "cache_hits": 0,
+   "tokens_in": 11689,
+   "tokens_out": 534,
+   "cost_usd": 0.0014
+  },
+  "filings.results": {
+   "calls": 31,
+   "cache_hits": 11,
+   "tokens_in": 161501,
+   "tokens_out": 6992,
+   "cost_usd": 0.0189
+  },
+  "filings.summary": {
+   "calls": 60,
+   "cache_hits": 11,
+   "tokens_in": 223043,
+   "tokens_out": 12749,
+   "cost_usd": 0.0274
+  },
+  "research.cards": {
+   "calls": 12,
+   "cache_hits": 3,
+   "tokens_in": 35472,
+   "tokens_out": 26164,
+   "cost_usd": 0.069
+  },
+  "research.embed": {
+   "calls": 35,
+   "cache_hits": 0,
+   "tokens_in": 482394,
+   "tokens_out": 0,
+   "cost_usd": 0.0724
+  },
+  "research.evidence_query": {
+   "calls": 32,
+   "cache_hits": 0,
+   "tokens_in": 1488,
+   "tokens_out": 0,
+   "cost_usd": 0.0002
+  },
+  "research.link": {
+   "calls": 12,
+   "cache_hits": 5,
+   "tokens_in": 8063,
+   "tokens_out": 5633,
+   "cost_usd": 0.0031
+  },
+  "research.promises": {
+   "calls": 73,
+   "cache_hits": 34,
+   "tokens_in": 616637,
+   "tokens_out": 15746,
+   "cost_usd": 0.068
+  },
+  "research.verdict": {
+   "calls": 12,
+   "cache_hits": 3,
+   "tokens_in": 60433,
+   "tokens_out": 15364,
+   "cost_usd": 0.0459
+  }
+ },
+ "total_calls": 285,
+ "cache_hit_rate": 0.239,
+ "total_cost_usd_at_list_price": 0.3216,
+ "actual_cost_usd": 0.0,
+ "research_runs": 6,
+ "avg_research_cost_usd": 0.0431,
+ "models": {
+  "gemini-embedding-001": 67,
+  "gemini-3.5-flash-lite": 183,
+  "gemini-flash-lite-latest": 1,
+  "gemini-3.1-flash-lite": 11,
+  "gemini-3.6-flash": 21,
+  "gemini-3.8-flash": 2
+ },
+ "note": "Built on Gemini's free tier, so actual spend is zero. Costs are what the same tokens would cost at paid list prices.",
+ "generated_at": "2026-11-12T20:06:51.436301+00:00"
+}

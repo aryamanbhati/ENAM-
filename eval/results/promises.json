@@ -1,0 +1,97 @@
+{
+ "companies": [
+  {
+   "symbol": "SUZLON",
+   "transcripts": 6,
+   "promises": 10,
+   "quotes_verified": 15,
+   "quotes_dropped": 2,
+   "verdicts": {
+    "delivered": 1,
+    "partly": 1,
+    "missed": 0,
+    "dropped": 4,
+    "too_early": 3,
+    "not_measurable": 1
+   }
+  },
+  {
+   "symbol": "DIXON",
+   "transcripts": 6,
+   "promises": 16,
+   "quotes_verified": 21,
+   "quotes_dropped": 7,
+   "verdicts": {
+    "delivered": 1,
+    "partly": 1,
+    "missed": 0,
+    "dropped": 3,
+    "too_early": 9,
+    "not_measurable": 2
+   }
+  },
+  {
+   "symbol": "TITAN",
+   "transcripts": 6,
+   "promises": 7,
+   "quotes_verified": 7,
+   "quotes_dropped": 2,
+   "verdicts": {
+    "delivered": 2,
+    "partly": 0,
+    "missed": 0,
+    "dropped": 1,
+    "too_early": 1,
+    "not_measurable": 3
+   }
+  },
+  {
+   "symbol": "KPITTECH",
+   "transcripts": 6,
+   "promises": 6,
+   "quotes_verified": 8,
+   "quotes_dropped": 1,
+   "verdicts": {
+    "delivered": 0,
+    "partly": 0,
+    "missed": 1,
+    "dropped": 4,
+    "too_early": 0,
+    "not_measurable": 1
+   }
+  },
+  {
+   "symbol": "POLYCAB",
+   "transcripts": 6,
+   "promises": 9,
+   "quotes_verified": 22,
+   "quotes_dropped": 0,
+   "verdicts": {
+    "delivered": 0,
+    "partly": 0,
+    "missed": 0,
+    "dropped": 4,
+    "too_early": 4,
+    "not_measurable": 1
+   }
+  },
+  {
+   "symbol": "PERSISTENT",
+   "transcripts": 6,
+   "promises": 4,
+   "quotes_verified": 10,
+   "quotes_dropped": 1,
+   "verdicts": {
+    "delivered": 1,
+    "partly": 0,
+    "missed": 0,
+    "dropped": 2,
+    "too_early": 1,
+    "not_measurable": 0
+   }
+  }
+ ],
+ "quote_verification_pass_rate": 0.865,
+ "note": "Precision and recall against hand-labelled promises need human labels; see eval/README.md.",
+ "generated_at": "2026-11-12T20:06:50.073926+00:00"
+}
