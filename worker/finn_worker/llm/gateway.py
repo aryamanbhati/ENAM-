@@ -108,7 +108,7 @@ class Gateway:
         key = config.env("GEMINI_API_KEY") or config.env("GOOGLE_API_KEY")
         if not key:
             raise LlmError("GEMINI_API_KEY is not set")
-        self._http = httpx.Client(base_url=API, headers={"x-goog-api-key": key}, timeout=180)
+        self._http = httpx.Client(base_url=API, headers={"x-goog-api-key": key}, timeout=120)
         self._db = db
         self._last_call: dict[str, float] = {}
         self.min_interval = float(config.env("FINN_LLM_MIN_INTERVAL", "1.0") or 1.0)
@@ -141,12 +141,15 @@ class Gateway:
             time.sleep(wait)
         self._last_call[model] = time.monotonic()
 
-    def _generate(self, model: str, system: str, user: str, schema: dict | None, temperature: float) -> dict:
+    def _generate(self, model: str, system: str, user: str, schema: dict | None, temperature: float,
+                  thinking: int | None = None) -> dict:
         body: dict[str, Any] = {
             "systemInstruction": {"parts": [{"text": system}]},
             "contents": [{"role": "user", "parts": [{"text": user}]}],
             "generationConfig": {"temperature": temperature, "responseMimeType": "application/json"},
         }
+        if thinking is not None:  # cap thinking tokens: latency matters more than depth for card text
+            body["generationConfig"]["thinkingConfig"] = {"thinkingBudget": thinking}
         if schema is not None:
             body["generationConfig"]["responseJsonSchema"] = schema
         self._throttle(model)
@@ -156,15 +159,17 @@ class Gateway:
         return r.json()
 
     def _with_fallback(self, tier: str, fn) -> tuple[str, Any]:
+        # Strong models are often overloaded on the free tier: fail over quickly instead of waiting.
+        attempts = 2 if tier == "strong" else 4
         last: Exception | None = None
         for model in chain(tier):
-            for attempt in range(4):
+            for attempt in range(attempts):
                 try:
                     return model, fn(model)
                 except httpx.HTTPStatusError as exc:
                     code = exc.response.status_code
                     last = exc
-                    if code in (429, 500, 503) and attempt < 3:
+                    if code in (429, 500, 503) and attempt < attempts - 1:
                         delay = 4 * 2**attempt
                         m = re.search(r'"retryDelay":\s*"(\d+)s"', exc.response.text)
                         if m and code == 429:
@@ -200,7 +205,8 @@ class Gateway:
         errors = ""
         for attempt in range(3):  # first try + max 2 retries on schema failure
             started = time.monotonic()
-            model, resp = self._with_fallback(tier, lambda m: self._generate(m, system, user + errors, js, temperature))
+            thinking = int(config.env("FINN_STRONG_THINKING", "1024")) if tier == "strong" else None
+            model, resp = self._with_fallback(tier, lambda m: self._generate(m, system, user + errors, js, temperature, thinking))
             usage = resp.get("usageMetadata", {})
             tin = usage.get("promptTokenCount", 0)
             tout = usage.get("candidatesTokenCount", 0) + usage.get("thoughtsTokenCount", 0)
