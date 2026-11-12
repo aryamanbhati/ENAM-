@@ -1,0 +1,42 @@
+name: filings
+
+on:
+  schedule:
+    # GitHub cron is UTC and can run a few minutes late.
+    - cron: "*/15 3-10 * * 1-5"   # every 15 min, 08:30 to 16:15 IST, weekdays
+    - cron: "30 2 * * *"          # morning catch-up, 08:00 IST
+  workflow_dispatch:
+    inputs:
+      since:
+        description: "ISO datetime to backfill from (optional)"
+        required: false
+
+concurrency:
+  group: filings
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: worker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: worker/pyproject.toml
+      - run: pip install -e .
+      - name: Ingest filings
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -n "${{ github.event.inputs.since }}" ]; then
+            python -m finn_worker.cli ingest-filings --since "${{ github.event.inputs.since }}"
+          else
+            python -m finn_worker.cli ingest-filings
+          fi
