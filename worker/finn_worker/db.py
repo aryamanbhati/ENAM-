@@ -25,6 +25,32 @@ class Db:
         r.raise_for_status()
         return r.json()
 
+    def insert(self, table: str, rows: list[dict[str, Any]] | dict[str, Any], returning: bool = False) -> list[dict[str, Any]]:
+        rows = [rows] if isinstance(rows, dict) else rows
+        if not rows:
+            return []
+        prefer = "return=representation" if returning else "return=minimal"
+        r = self._c.post(f"/{table}", headers={"Prefer": prefer}, json=rows)
+        if r.status_code >= 400:
+            raise RuntimeError(f"Insert into {table} failed: {r.status_code} {r.text[:500]}")
+        return r.json() if returning else []
+
+    def update(self, table: str, match: dict[str, str], values: dict[str, Any]) -> None:
+        r = self._c.patch(f"/{table}", params=match, headers={"Prefer": "return=minimal"}, json=values)
+        if r.status_code >= 400:
+            raise RuntimeError(f"Update of {table} failed: {r.status_code} {r.text[:500]}")
+
+    def delete(self, table: str, match: dict[str, str]) -> None:
+        r = self._c.delete(f"/{table}", params=match)
+        if r.status_code >= 400:
+            raise RuntimeError(f"Delete from {table} failed: {r.status_code} {r.text[:500]}")
+
+    def rpc(self, fn: str, args: dict[str, Any]) -> Any:
+        r = self._c.post(f"/rpc/{fn}", json=args)
+        if r.status_code >= 400:
+            raise RuntimeError(f"RPC {fn} failed: {r.status_code} {r.text[:500]}")
+        return r.json()
+
     def upsert(self, table: str, rows: list[dict[str, Any]], on_conflict: str, ignore_duplicates: bool = False) -> None:
         if not rows:
             return

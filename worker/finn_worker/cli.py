@@ -29,7 +29,24 @@ def main(argv: list[str] | None = None) -> int:
     f.add_argument("--retier", action="store_true", help="Overwrite tiers of filings already stored")
     f.add_argument("--out", type=Path, help="Write tiered rows to this JSON file")
 
+    e = sub.add_parser("ingest-eod", help="Fetch EOD prices, compute moves and volume spikes, store signals")
+    e.add_argument("--dry-run", action="store_true", help="Compute but do not write")
+    e.add_argument("--period", default="3mo", help="yfinance period to (re)load, e.g. 3mo, 1y")
+    e.add_argument("--backfill-days", type=int, default=0, help="Also compute signals for this many past trading days")
+
+    r = sub.add_parser("research", help="Promised vs delivered for one NSE symbol")
+    r.add_argument("symbol")
+    r.add_argument("--job-id")
+    r.add_argument("--force", action="store_true", help="Rebuild even if the transcript set is unchanged")
+
+    mg = sub.add_parser("migrate", help="Apply supabase/migrations/*.sql not yet applied (needs DATABASE_URL)")
+    mg.add_argument("--mark-applied", nargs="*", default=[], help="Record these files as applied without running them")
+
     args = p.parse_args(argv)
+    if args.cmd == "migrate":
+        from .migrate import run as run_migrate
+
+        return run_migrate(args.mark_applied)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
     if args.cmd == "ingest-filings":
@@ -38,6 +55,17 @@ def main(argv: list[str] | None = None) -> int:
         summary = run(args.since, args.dry_run, args.retier, args.symbols, args.out)
         print(json.dumps(summary, indent=1))
         return 1 if summary["failed"] and len(summary["failed"]) == summary["companies"] else 0
+    if args.cmd == "ingest-eod":
+        from .pipelines.eod import run as run_eod
+
+        summary = run_eod(args.dry_run, args.period, args.backfill_days)
+        print(json.dumps(summary, indent=1, default=str))
+        return 0 if summary["companies"] else 1
+    if args.cmd == "research":
+        from .pipelines.research import run as run_research
+
+        print(json.dumps(run_research(args.symbol, args.job_id, args.force), indent=1, default=str))
+        return 0
     return 2
 
 
