@@ -1,4 +1,7 @@
 // Day 1 skeleton. The real Today screen (window picker, three tiers, swipe stack) lands on Friday.
+// Rendered per request: a statically built page would freeze the date at build time.
+export const dynamic = "force-dynamic";
+
 export default function Today() {
   const today = new Date().toLocaleDateString("en-IN", {
     weekday: "long",

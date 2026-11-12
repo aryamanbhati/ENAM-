@@ -2,6 +2,8 @@
 
 A mobile-first financial investment agent. It filters an investor's portfolio news down to what needs them, and analyses what management promised against what it delivered.
 
+**Live:** https://enam-six.vercel.app (on a phone, add it to the home screen so notifications work).
+
 Built for the ENAM Holdings AI Engineer build challenge. Product and system design: [docs/DESIGN.md](docs/DESIGN.md). Build rules: [CLAUDE.md](CLAUDE.md).
 
 ## Layout
