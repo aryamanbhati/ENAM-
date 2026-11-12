@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+/* Colour only carries meaning: up/delivered, down/missed, partial, too early. Everything else neutral. */
+:root {
+  --bg: #fbfaf7;
+  --surface: #ffffff;
+  --ink: #1a1a18;
+  --muted: #6b6a65;
+  --line: #e7e5df;
+  --up: #1f7a4d;
+  --down: #b3352b;
+  --partial: #a86b00;
+  --early: #8a8984;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121211;
+    --surface: #1b1b19;
+    --ink: #ecebe6;
+    --muted: #9a9993;
+    --line: #2c2c29;
+    --up: #4cb07c;
+    --down: #e0675c;
+    --partial: #d9a23a;
+    --early: #77766f;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-up: var(--up);
+  --color-down: var(--down);
+  --color-partial: var(--partial);
+  --color-early: var(--early);
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-newsreader);
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: env(safe-area-inset-bottom);
+}
