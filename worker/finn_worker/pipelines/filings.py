@@ -29,6 +29,7 @@ def filing_row(f: RawFiling, company_id: int, d: TierDecision) -> dict:
         "category": f.category, "subcategory": f.subcategory, "subject": f.subject, "headline": f.headline,
         "pdf_url": f.pdf_url, "finn_category": d.finn_category, "tier": d.tier, "tier_source": d.tier_source,
         "confidence": d.confidence, "reason": d.reason, "raw": f.raw,
+        "trigger_eligible": d.trigger_eligible, "needs_llm": d.needs_llm,
     }
 
 
@@ -41,7 +42,8 @@ def dedupe_results(rows: list[dict]) -> list[dict]:
     for r in rows:
         if (r["tier"] == "needs_you" and r["finn_category"] == "results" and r["subcategory"] != "Financial Results"
                 and (r["_symbol"], r["filed_at"][:10]) in has_results):
-            r.update(tier="worth_knowing", tier_source="rule", reason="Board outcome enclosing the results filed the same day")
+            r.update(tier="worth_knowing", tier_source="rule", trigger_eligible=False,
+                     reason="Board outcome enclosing the results filed the same day")
     return rows
 
 

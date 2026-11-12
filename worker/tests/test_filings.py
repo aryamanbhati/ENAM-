@@ -102,3 +102,4 @@ def test_dedupe_results_keeps_one_alert():
     rows = [dict(base, id="1", subcategory="Financial Results"), dict(base, id="2", subcategory="Outcome of Board Meeting")]
     out = dedupe_results(rows)
     assert [r["tier"] for r in out] == ["needs_you", "worth_knowing"]
+    assert out[1]["trigger_eligible"] is False

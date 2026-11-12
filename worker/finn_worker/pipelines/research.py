@@ -29,7 +29,7 @@ from ..verify.quotes import number_in_text, quote_on_page
 from . import verdicts as V
 
 log = logging.getLogger(__name__)
-N_TRANSCRIPTS = 4
+N_TRANSCRIPTS = 6
 
 # ---- schemas -----------------------------------------------------------------------------------------
 
@@ -272,9 +272,9 @@ def _run(db: Db, gw: Gateway, progress: Progress, symbol: str, force: bool) -> d
             rec |= {"verdict": verdict, "tracking": tracking, "actual": actual, "method": V.METHOD[cat],
                     "status_line": V.status_line(cat, low, high, actual, verdict),
                     "verdict_reason": None}
-            if verdict == "too_early" and V.is_dropped(mention_periods, periods):
+            if verdict == "too_early" and V.is_dropped(mention_periods, periods, tracking):
                 rec["verdict"], rec["status_line"] = "dropped", rec["status_line"] + ", no longer mentioned"
-        elif V.is_dropped(mention_periods, periods):
+        elif V.is_dropped(mention_periods, periods, None):
             last = mention_periods[-1]
             rec |= {"verdict": "dropped", "status_line": f"Last mentioned in {last}, silent since",
                     "verdict_reason": f"Stated in {mention_periods[0]}, not mentioned in {', '.join(rec['silent'])}."}
@@ -302,6 +302,8 @@ def _run(db: Db, gw: Gateway, progress: Progress, symbol: str, force: bool) -> d
                   "status_line": {"delivered": "Delivered, per later calls", "partly": "Partly delivered, per later calls",
                                   "missed": "Missed, per later calls", "too_early": "Too early to tell",
                                   "not_measurable": "Not measurable from the documents"}[verdict]}
+            if V.calls_since_last_mention(r["mention_periods"], periods) == 1 and verdict in ("too_early", "not_measurable"):
+                r["status_line"] += ", not mentioned on the latest call"
 
     # 7. card text
     progress("Writing the scorecard")

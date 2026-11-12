@@ -33,8 +33,8 @@ PROMPTS = config.WORKER_ROOT / "prompts"
 API = "https://generativelanguage.googleapis.com/v1beta"
 
 DEFAULT_CHAINS = {
-    "cheap": "gemini-3.5-flash-lite,gemini-flash-lite-latest",
-    "strong": "gemini-3.8-flash,gemini-3.5-flash,gemini-3.5-flash-lite",
+    "cheap": "gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-3.5-flash",
+    "strong": "gemini-3.6-flash,gemini-3.5-flash,gemini-3.8-flash,gemini-3.5-flash-lite",
     "embed": "gemini-embedding-001",
 }
 EMBED_DIMS = 768
@@ -158,14 +158,14 @@ class Gateway:
     def _with_fallback(self, tier: str, fn) -> tuple[str, Any]:
         last: Exception | None = None
         for model in chain(tier):
-            for attempt in range(3):
+            for attempt in range(4):
                 try:
                     return model, fn(model)
                 except httpx.HTTPStatusError as exc:
                     code = exc.response.status_code
                     last = exc
-                    if code in (429, 500, 503) and attempt < 2:
-                        delay = 3 * 2**attempt
+                    if code in (429, 500, 503) and attempt < 3:
+                        delay = 4 * 2**attempt
                         m = re.search(r'"retryDelay":\s*"(\d+)s"', exc.response.text)
                         if m and code == 429:
                             delay = min(int(m.group(1)) + 1, 60)
@@ -188,7 +188,7 @@ class Gateway:
         user = render(user_t or template, **values)
         system = render(system, **values) if user_t else "You are a careful financial analyst. Output JSON only."
         js = _clean_schema(schema.model_json_schema())
-        key = hashlib.sha256(json.dumps([chain(tier), version, system, user, js], sort_keys=True).encode()).hexdigest()
+        key = hashlib.sha256(json.dumps([tier, version, system, user, js], sort_keys=True).encode()).hexdigest()  # stable across fallback-chain edits
 
         if use_cache:
             hit = self._cache_get(key)

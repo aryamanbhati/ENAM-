@@ -2,7 +2,7 @@
 -- Generated from BSE's scrip list (worker/fixtures/bse_scrips.json).
 
 insert into companies (nse_symbol, bse_code, isin, name, sector, yahoo_symbol) values
-  ('RELIANCE', '500325', 'INE002A01018', 'Reliance Industries Ltd', 'Energy and conglomerate', 'RELIANCE.NS'),
+  ('RELIANCE', '500325', 'INE002A01018', 'Reliance Industries', 'Energy and conglomerate', 'RELIANCE.NS'),
   ('HDFCBANK', '500180', 'INE040A01034', 'HDFC Bank Ltd.', 'Banking', 'HDFCBANK.NS'),
   ('ICICIBANK', '532174', 'INE090A01021', 'ICICI Bank Ltd.', 'Banking', 'ICICIBANK.NS'),
   ('INFY', '500209', 'INE009A01021', 'Infosys Ltd', 'IT services', 'INFY.NS'),

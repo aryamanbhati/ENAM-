@@ -4,7 +4,7 @@ on:
   schedule:
     # GitHub cron is UTC and can run a few minutes late.
     - cron: "*/15 3-10 * * 1-5"   # every 15 min, 08:30 to 16:15 IST, weekdays
-    - cron: "30 2 * * *"          # morning catch-up, 08:00 IST
+    - cron: "30 2 * * *"          # morning catch-up and digest, 08:00 IST
   workflow_dispatch:
     inputs:
       since:
@@ -22,6 +22,16 @@ jobs:
     defaults:
       run:
         working-directory: worker
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      FINN_MODEL_CHEAP: ${{ vars.FINN_MODEL_CHEAP }}
+      FINN_MODEL_STRONG: ${{ vars.FINN_MODEL_STRONG }}
+      FINN_EMBED_MODEL: ${{ vars.FINN_EMBED_MODEL }}
+      VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+      VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+      VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -30,13 +40,20 @@ jobs:
           cache: pip
           cache-dependency-path: worker/pyproject.toml
       - run: pip install -e .
-      - name: Ingest filings
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      - name: Ingest filings (rules tier, triggers, alerts)
         run: |
           if [ -n "${{ github.event.inputs.since }}" ]; then
             python -m finn_worker.cli ingest-filings --since "${{ github.event.inputs.since }}"
           else
             python -m finn_worker.cli ingest-filings
           fi
+      - name: Enrich (summaries, results numbers, bios, vague tiering)
+        if: env.GEMINI_API_KEY != ''
+        continue-on-error: true   # a busy model must not block alerts
+        run: python -m finn_worker.cli enrich --days 2 --limit 40
+      - name: Push new alerts
+        run: python -m finn_worker.cli push ${{ github.event.schedule == '30 2 * * *' && '--digest' || '' }}
+      - name: Results calendar
+        if: github.event.schedule == '30 2 * * *'
+        continue-on-error: true
+        run: python -m finn_worker.cli calendar

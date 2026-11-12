@@ -62,7 +62,24 @@ create table if not exists qa_cache (
   created_at  timestamptz not null default now()
 );
 
+-- Upcoming strip: results dates from BSE's results calendar.
+create table if not exists events (
+  company_id  bigint not null references companies(id) on delete cascade,
+  date        date not null,
+  kind        text not null default 'results',
+  source      text,
+  primary key (company_id, date, kind)
+);
+alter table events enable row level security;
+create policy events_read on events for select to anon, authenticated using (true);
+
+-- Cost protection: research jobs record a hashed requester for per-IP rate limits.
+alter table jobs add column if not exists requester text;
+create index if not exists jobs_created_idx on jobs (created_at desc);
+
 alter table filings add column if not exists needs_llm boolean not null default false;
+-- Lets the app re-apply the user's current triggers live (preferences reorder, never hide).
+alter table filings add column if not exists trigger_eligible boolean not null default false;
 alter table filings add column if not exists pdf_hash text;
 
 alter table research enable row level security;

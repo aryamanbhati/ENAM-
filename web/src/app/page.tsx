@@ -1,37 +1,35 @@
-// Day 1 skeleton. The real Today screen (window picker, three tiers, swipe stack) lands on Friday.
-// Rendered per request: a statically built page would freeze the date at build time.
+import { Masthead } from "@/components/Masthead";
+import { TodayView } from "@/components/TodayView";
+import { db } from "@/lib/db";
+import { WINDOWS, type WindowKey } from "@/lib/format";
+import { itemsInWindow, marketState, upcoming } from "@/lib/queries";
+
 export const dynamic = "force-dynamic";
 
-export default function Today() {
-  const today = new Date().toLocaleDateString("en-IN", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    timeZone: "Asia/Kolkata",
-  });
+export default async function Today({ searchParams }: { searchParams: Promise<{ w?: string }> }) {
+  const { w } = await searchParams;
+  const win: WindowKey = w && w in WINDOWS ? (w as WindowKey) : "24h";
+  const [{ items, failed }, next] = await Promise.all([itemsInWindow(WINDOWS[win]), upcoming()]);
 
+  // Context for "what it means for you": how often this kind of filing happens at this company.
+  const ids = [...new Set(items.map((i) => i.company.id))];
+  const [hist, market] = await Promise.all([
+    ids.length
+      ? db().from("filings").select("company_id,finn_category,filed_at").in("company_id", ids).neq("tier", "routine").order("filed_at", { ascending: true }).limit(5000)
+      : Promise.resolve({ data: [] as { company_id: number; finn_category: string; filed_at: string }[] }),
+    marketState(items.filter((i) => i.kind === "signal").map((i) => i.company.id)),
+  ]);
+  const since = hist.data?.[0]?.filed_at ?? null;
+  const counts: Record<string, number> = {};
+  for (const h of hist.data ?? []) counts[`${h.company_id}:${h.finn_category}`] = (counts[`${h.company_id}:${h.finn_category}`] ?? 0) + 1;
+  const series: Record<number, { date: string; close: number }[]> = {};
+  for (const [id, s] of market) series[id] = s.series.slice(-30).map((r) => ({ date: r.date, close: r.close }));
+
+  const today = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", timeZone: "Asia/Kolkata" });
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pt-[max(env(safe-area-inset-top),2rem)]">
-      <header className="flex items-baseline justify-between border-b border-line pb-3">
-        <h1 className="font-serif text-2xl tracking-tight">FINN</h1>
-        <span className="text-xs text-muted">{today}</span>
-      </header>
-
-      <section className="flex flex-1 flex-col justify-center gap-3 pb-24">
-        <p className="font-serif text-3xl leading-tight">Nothing needs you yet.</p>
-        <p className="text-sm text-muted">
-          Your portfolio digest is being wired up. Filings are already being read and sorted into what needs you, what
-          is worth knowing, and what is routine.
-        </p>
-      </section>
-
-      <nav className="fixed inset-x-0 bottom-0 border-t border-line bg-bg/90 backdrop-blur pb-[env(safe-area-inset-bottom)]">
-        <ul className="mx-auto flex max-w-md justify-around py-3 text-xs">
-          <li className="font-medium">Today</li>
-          <li className="text-muted">Portfolio</li>
-          <li className="text-muted">Research</li>
-        </ul>
-      </nav>
-    </main>
+    <>
+      <Masthead title="FINN" sub={today} />
+      <TodayView items={items} win={win} failed={failed} upcoming={next.map((u) => ({ symbol: u.company.nse_symbol, name: u.company.name, date: u.date }))} counts={counts} historySince={since} series={series} />
+    </>
   );
 }

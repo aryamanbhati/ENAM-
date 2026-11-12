@@ -113,10 +113,20 @@ def silent_periods(mention_periods: list[str], all_periods: list[str]) -> list[s
     return [p for p in all_periods[first + 1 :] if p not in mention_periods]
 
 
-def is_dropped(mention_periods: list[str], all_periods: list[str]) -> bool:
-    """Quietly dropped: stated, then absent from the latest call (and every call since the last mention).
-    Needs at least one later call to be silent in. A thread first stated in the latest call is not dropped."""
+def calls_since_last_mention(mention_periods: list[str], all_periods: list[str]) -> int:
     if not mention_periods or not all_periods:
-        return False
+        return 0
     last = max(all_periods.index(p) for p in mention_periods)
-    return last < len(all_periods) - 1
+    return len(all_periods) - 1 - last
+
+
+def is_dropped(mention_periods: list[str], all_periods: list[str], tracking: str | None = None) -> bool:
+    """Quietly dropped: stated, then not mentioned on the latest calls.
+
+    Two consecutive silent calls (up to and including the latest) count as dropped. One silent call counts
+    only when the numbers say the target is behind. A target that is on track or ahead is never 'dropped':
+    management need not repeat a promise it is beating."""
+    if tracking in ("on_track", "ahead", "done"):
+        return False
+    silent = calls_since_last_mention(mention_periods, all_periods)
+    return silent >= 2 or (silent == 1 and tracking == "behind")

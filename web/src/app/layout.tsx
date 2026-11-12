@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Newsreader } from "next/font/google";
+import { AskProvider } from "@/components/Ask";
+import { BottomNav } from "@/components/BottomNav";
+import { ServiceWorker } from "@/components/ServiceWorker";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -24,7 +27,13 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${newsreader.variable}`}>{children}</body>
+      <body className={`${inter.variable} ${newsreader.variable}`}>
+        <AskProvider>
+          <main className="mx-auto min-h-dvh max-w-md px-5 pb-36">{children}</main>
+          <BottomNav />
+        </AskProvider>
+        <ServiceWorker />
+      </body>
     </html>
   );
 }

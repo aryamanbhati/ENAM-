@@ -39,6 +39,16 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--job-id")
     r.add_argument("--force", action="store_true", help="Rebuild even if the transcript set is unchanged")
 
+    en = sub.add_parser("enrich", help="Summaries, results numbers, bios and vague-filing tiering for recent filings")
+    en.add_argument("--days", type=int, default=3)
+    en.add_argument("--limit", type=int, default=60)
+    en.add_argument("--ids", nargs="*")
+
+    cal = sub.add_parser("calendar", help="Upcoming results dates for the portfolio from BSE's results calendar")
+
+    pu = sub.add_parser("push", help="Send web push for alerts not yet pushed")
+    pu.add_argument("--digest", action="store_true", help="Also send the morning digest")
+
     mg = sub.add_parser("migrate", help="Apply supabase/migrations/*.sql not yet applied (needs DATABASE_URL)")
     mg.add_argument("--mark-applied", nargs="*", default=[], help="Record these files as applied without running them")
 
@@ -61,6 +71,21 @@ def main(argv: list[str] | None = None) -> int:
         summary = run_eod(args.dry_run, args.period, args.backfill_days)
         print(json.dumps(summary, indent=1, default=str))
         return 0 if summary["companies"] else 1
+    if args.cmd == "enrich":
+        from .pipelines.enrich import run as run_enrich
+
+        print(json.dumps(run_enrich(args.days, args.limit, args.ids), indent=1))
+        return 0
+    if args.cmd == "calendar":
+        from .pipelines.calendar import run as run_calendar
+
+        print(json.dumps(run_calendar(), indent=1))
+        return 0
+    if args.cmd == "push":
+        from .pipelines.push import run as run_push
+
+        print(json.dumps(run_push(args.digest), indent=1))
+        return 0
     if args.cmd == "research":
         from .pipelines.research import run as run_research
 

@@ -71,7 +71,10 @@ def test_missing_numbers_are_not_guessed():
 def test_silence_and_dropped():
     periods = ["Q3 FY26", "Q4 FY26", "Q1 FY27", "Q2 FY27"]
     assert silent_periods(["Q3 FY26", "Q4 FY26"], periods) == ["Q1 FY27", "Q2 FY27"]
-    assert is_dropped(["Q3 FY26", "Q4 FY26"], periods)
+    assert is_dropped(["Q3 FY26", "Q4 FY26"], periods)                    # silent on the last two calls
+    assert not is_dropped(["Q3 FY26", "Q1 FY27"], periods)                # silent once: not enough alone
+    assert is_dropped(["Q3 FY26", "Q1 FY27"], periods, tracking="behind")  # silent once and behind
+    assert not is_dropped(["Q3 FY26"], periods, tracking="ahead")         # beating it: never dropped
     assert not is_dropped(["Q3 FY26", "Q2 FY27"], periods)
     assert not is_dropped(["Q2 FY27"], periods)
 

@@ -1,0 +1,52 @@
+name: research
+
+on:
+  workflow_dispatch:
+    inputs:
+      ticker:
+        description: "NSE symbol"
+        required: true
+      job_id:
+        description: "jobs.id to report progress to"
+        required: false
+      force:
+        description: "Rebuild even if transcripts are unchanged"
+        required: false
+        default: "false"
+
+concurrency:
+  group: research-${{ github.event.inputs.ticker }}
+  cancel-in-progress: false
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: worker
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      FINN_MODEL_CHEAP: ${{ vars.FINN_MODEL_CHEAP }}
+      FINN_MODEL_STRONG: ${{ vars.FINN_MODEL_STRONG }}
+      FINN_EMBED_MODEL: ${{ vars.FINN_EMBED_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: worker/pyproject.toml
+      - run: pip install -e .
+      - name: Research
+        env:
+          TICKER: ${{ github.event.inputs.ticker }}
+          JOB_ID: ${{ github.event.inputs.job_id }}
+          FORCE: ${{ github.event.inputs.force }}
+        run: |
+          ARGS="$TICKER"
+          if [ -n "$JOB_ID" ]; then ARGS="$ARGS --job-id $JOB_ID"; fi
+          if [ "$FORCE" = "true" ]; then ARGS="$ARGS --force"; fi
+          python -m finn_worker.cli research $ARGS
