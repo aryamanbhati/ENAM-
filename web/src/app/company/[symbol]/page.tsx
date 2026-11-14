@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { AskScopeSetter } from "@/components/Ask";
 import { Avatar, Move, SegmentedBar, StatusChip, TierBadge, VERDICT } from "@/components/Badges";
 import { Masthead } from "@/components/Masthead";
-import { Sparkline } from "@/components/Sparkline";
+import { PriceChart } from "@/components/PriceChart";
 import { categoryLabel, cleanSubject, keptLine, relTime, shortName } from "@/lib/format";
 import { companyBySymbol, companyFilings, marketState, portfolio, research } from "@/lib/queries";
 
@@ -54,8 +54,8 @@ export default async function CompanyHub({ params }: { params: Promise<{ symbol:
       </section>
 
       {m && (
-        <div className="mt-3">
-          <Sparkline points={m.series.slice(-30)} />
+        <div className="mt-4">
+          <PriceChart points={m.series.slice(-30)} />
         </div>
       )}
 

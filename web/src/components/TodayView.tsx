@@ -233,17 +233,50 @@ function WindowPicker({ win, range }: { win: WindowKey | "custom"; range?: { fro
   const today = new Date().toISOString().slice(0, 10);
   const [from, setFrom] = useState(range?.from ?? new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10));
   const [to, setTo] = useState(range?.to ?? today);
+  const tabs: Array<{ key: WindowKey | "custom"; label: string; href?: string; icon?: boolean }> = [
+    { key: "24h", label: "24h", href: "/" },
+    { key: "7d", label: "7d", href: "/?w=7d" },
+    { key: "30d", label: "30d", href: "/?w=30d" },
+    { key: "custom", label: "Custom", icon: true },
+  ];
+  const activeIndex = tabs.findIndex((t) => t.key === win);
   return (
     <div>
-      <div role="tablist" aria-label="Time window" className="card flex !rounded-full p-1 text-[13px] font-medium">
-        {(Object.keys(WINDOWS) as WindowKey[]).map((k) => (
-          <Link key={k} href={k === "24h" ? "/" : `/?w=${k}`} role="tab" aria-selected={k === win} scroll={false} className={`flex-1 rounded-full py-1.5 text-center ${k === win ? "bg-ink text-bg" : "text-muted"}`}>
-            {k}
-          </Link>
-        ))}
-        <button role="tab" aria-selected={win === "custom"} onClick={() => setCustom((c) => !c)} className={`flex flex-1 items-center justify-center gap-1 rounded-full py-1.5 ${win === "custom" ? "bg-ink text-bg" : custom ? "text-brand" : "text-muted"}`}>
-          <Calendar className="h-3.5 w-3.5" /> Custom
-        </button>
+      <div role="tablist" aria-label="Time window" className="card relative flex !rounded-full p-1 text-[13px] font-medium">
+        <span
+          aria-hidden
+          className="absolute top-1 bottom-1 rounded-full bg-ink transition-all"
+          style={{
+            left: `calc(${(activeIndex / tabs.length) * 100}% + 4px)`,
+            width: `calc(${100 / tabs.length}% - 8px)`,
+            transitionDuration: "var(--d-base)",
+            transitionTimingFunction: "var(--e-std)",
+          }}
+        />
+        {tabs.map((t) =>
+          t.href ? (
+            <Link
+              key={t.key}
+              href={t.href}
+              role="tab"
+              aria-selected={t.key === win}
+              scroll={false}
+              className={`relative z-[1] flex-1 rounded-full py-1.5 text-center transition-colors ${t.key === win ? "text-bg" : "text-muted hover:text-ink"}`}
+            >
+              {t.label}
+            </Link>
+          ) : (
+            <button
+              key={t.key}
+              role="tab"
+              aria-selected={win === "custom"}
+              onClick={() => setCustom((c) => !c)}
+              className={`relative z-[1] flex flex-1 items-center justify-center gap-1 rounded-full py-1.5 transition-colors ${win === "custom" ? "text-bg" : custom ? "text-brand" : "text-muted hover:text-ink"}`}
+            >
+              <Calendar className="h-3.5 w-3.5" /> {t.label}
+            </button>
+          ),
+        )}
       </div>
       {custom && (
         <form

@@ -162,24 +162,8 @@ function PromiseCard({ p, docUrl, onAsk }: { p: PromiseRow; docUrl: Map<number, 
       {open && (
         <div className="fade-in mt-3 space-y-3">
           {card.body && <p className="text-sm leading-relaxed">{card.body}</p>}
-          <ol className="relative space-y-3 border-l border-line pl-4">
-            {mentions.map((m) => (
-              <li key={m.period} className="relative">
-                <span className={`absolute -left-[21px] top-1.5 h-2 w-2 rounded-full ${m.status === "silent" ? "border border-down bg-bg" : m.status === "lowered" ? "bg-partial" : "bg-ink"}`} />
-                <p className="text-xs">
-                  <span className="font-medium">{m.period}</span> · <span className={m.status === "silent" ? "text-down" : "text-muted"}>{MENTION_LABEL[m.status]}</span>
-                </p>
-                {m.quote ? (
-                  <blockquote className="mt-1 font-serif text-[14px] leading-relaxed text-ink/90">
-                    “{cleanQuote(m.quote)}”
-                    <PageChip page={m.page} href={m.document_id ? docUrl.get(m.document_id) : null} />
-                  </blockquote>
-                ) : (
-                  <p className="mt-1 text-xs text-muted">Not mentioned on this call.</p>
-                )}
-              </li>
-            ))}
-          </ol>
+          <Timeline mentions={mentions} docUrl={docUrl} />
+
           {p.detail?.actual && (
             <p className="text-xs text-muted">
               {p.detail.method}. Quarters used: {p.detail.actual.quarters.join(", ")}.
@@ -200,6 +184,100 @@ function PromiseCard({ p, docUrl, onAsk }: { p: PromiseRow; docUrl: Map<number, 
         </div>
       )}
     </article>
+  );
+}
+
+/**
+ * Quarter-by-quarter record. Keeps every stated/raised/lowered/reiterated row
+ * visible, and groups runs of three or more consecutive silent quarters into a
+ * single expandable row so the timeline does not drown in "not mentioned" rows.
+ */
+function Timeline({
+  mentions,
+  docUrl,
+}: {
+  mentions: PromiseRow["mentions"];
+  docUrl: Map<number, string>;
+}) {
+  type Group = { kind: "silent"; items: PromiseRow["mentions"] } | { kind: "item"; m: PromiseRow["mentions"][number] };
+  const groups: Group[] = [];
+  for (const m of mentions) {
+    if (m.status === "silent") {
+      const last = groups[groups.length - 1];
+      if (last && last.kind === "silent") last.items.push(m);
+      else groups.push({ kind: "silent", items: [m] });
+    } else {
+      groups.push({ kind: "item", m });
+    }
+  }
+  return (
+    <ol className="relative space-y-3 border-l border-line pl-4">
+      {groups.map((g, i) =>
+        g.kind === "item" ? (
+          <MentionRow key={g.m.period} m={g.m} docUrl={docUrl} />
+        ) : g.items.length >= 3 ? (
+          <SilentRun key={`s-${i}`} items={g.items} docUrl={docUrl} />
+        ) : (
+          g.items.map((m) => <MentionRow key={m.period} m={m} docUrl={docUrl} />)
+        ),
+      )}
+    </ol>
+  );
+}
+
+function MentionRow({
+  m,
+  docUrl,
+}: {
+  m: PromiseRow["mentions"][number];
+  docUrl: Map<number, string>;
+}) {
+  const dot =
+    m.status === "silent"
+      ? "border border-down bg-bg"
+      : m.status === "lowered"
+        ? "bg-partial"
+        : "bg-ink";
+  return (
+    <li className="relative">
+      <span className={`absolute -left-[21px] top-1.5 h-2 w-2 rounded-full ${dot}`} />
+      <p className="text-xs">
+        <span className="font-medium">{m.period}</span>{" "}
+        <span className="text-faint">·</span>{" "}
+        <span className={m.status === "silent" ? "text-down" : "text-muted"}>{MENTION_LABEL[m.status]}</span>
+      </p>
+      {m.quote ? (
+        <blockquote className="mt-1 font-serif text-[14px] leading-relaxed text-ink/90">
+          “{cleanQuote(m.quote)}”
+          <PageChip page={m.page} href={m.document_id ? docUrl.get(m.document_id) : null} />
+        </blockquote>
+      ) : (
+        <p className="mt-1 text-xs text-muted">Not mentioned on this call.</p>
+      )}
+    </li>
+  );
+}
+
+function SilentRun({ items, docUrl }: { items: PromiseRow["mentions"]; docUrl: Map<number, string> }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <li className="relative">
+      <span className="absolute -left-[22px] top-1.5 h-2.5 w-2.5 rounded-full border border-dashed border-down bg-bg" />
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="text-xs text-muted hover:text-ink"
+        aria-expanded={open}
+      >
+        {open ? "Hide" : "Show"} {items.length} silent quarter{items.length === 1 ? "" : "s"} ({items[0].period} to {items[items.length - 1].period})
+      </button>
+      {open && (
+        <ol className="fade-in mt-2 space-y-3">
+          {items.map((m) => (
+            <MentionRow key={m.period} m={m} docUrl={docUrl} />
+          ))}
+        </ol>
+      )}
+    </li>
   );
 }
 
