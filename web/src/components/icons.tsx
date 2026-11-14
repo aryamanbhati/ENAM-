@@ -61,3 +61,30 @@ export const Spark = ({ className }: P) => (
     <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6" />
   </svg>
 );
+export const Check = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" className={className} {...base} strokeWidth={2.2} aria-hidden>
+    <path d="m5 12.5 4.5 4.5L19 7.5" />
+  </svg>
+);
+export const Send = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" className={className} {...base} strokeWidth={2} aria-hidden>
+    <path d="M12 19V5M6 11l6-6 6 6" />
+  </svg>
+);
+export const Calendar = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" className={className} {...base} aria-hidden>
+    <rect x="3.5" y="5" width="17" height="15" rx="3" />
+    <path d="M3.5 10h17M8 3v4M16 3v4" />
+  </svg>
+);
+export const Sparkles = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+    <path d="M12 2.5l1.9 5.6 5.6 1.9-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9zM19 15l.9 2.6 2.6.9-2.6.9L19 22l-.9-2.6-2.6-.9 2.6-.9z" />
+  </svg>
+);
+export const Search = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" className={className} {...base} aria-hidden>
+    <circle cx="11" cy="11" r="6.5" />
+    <path d="m16 16 4.5 4.5" />
+  </svg>
+);

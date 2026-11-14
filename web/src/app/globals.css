@@ -1,44 +1,122 @@
 @import "tailwindcss";
 
-/* Colour only carries meaning: up/delivered, down/missed, partial, too early. Everything else neutral. */
+/*
+  FINN design tokens. Palette B: Cream page, navy hero and emphasis, coral accent.
+  Meaning: green up / delivered, red down / missed / dropped, amber partial, grey too early.
+  Category hues label filing types so a feed scans by colour.
+*/
 :root {
-  --bg: #fbfaf7;
-  --surface: #ffffff;
-  --ink: #1a1a18;
-  --muted: #6b6a65;
-  --line: #e7e5df;
-  --up: #1f7a4d;
-  --down: #b3352b;
-  --partial: #a86b00;
-  --early: #8a8984;
+  --bg: #f6f0e4;
+  --surface: #fffaf0;
+  --raised: #f1e8d6;
+  --ink: #14213d;
+  --muted: #6f7487;
+  --faint: #9199a8;
+  --line: #e3d9c6;
+
+  --brand: #14213d;
+  --brand-2: #1f3056;
+  --brand-soft: #e4e1d2;
+
+  --accent: #ff6b4a;
+  --accent-ink: #c2401f;
+  --accent-soft: #ffe3db;
+
+  --up: #1c7c54;
+  --up-soft: #e3f1e8;
+  --down: #c8372d;
+  --down-soft: #fbe0dd;
+  --partial: #b26b00;
+  --partial-soft: #f8ead0;
+  --early: #827b6d;
+  --early-soft: #ece6d7;
+
+  --c-blue: #1d5fe0;
+  --c-blue-soft: #e4edff;
+  --c-violet: #7c3aed;
+  --c-violet-soft: #efe7ff;
+  --c-teal: #0b8a86;
+  --c-teal-soft: #dcf5f3;
+  --c-amber: #b86e00;
+  --c-amber-soft: #fff0d2;
+  --c-rose: #d02a6b;
+  --c-rose-soft: #fde6ef;
+  --c-slate: #56607a;
+  --c-slate-soft: #eaedf4;
+
+  --card-shadow: 0 1px 1px rgb(20 33 61 / 0.04), 0 8px 24px -14px rgb(20 33 61 / 0.18);
+  --dock-shadow: 0 10px 28px -10px rgb(20 33 61 / 0.35), 0 0 0 1px rgb(20 33 61 / 0.06);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #121211;
-    --surface: #1b1b19;
-    --ink: #ecebe6;
-    --muted: #9a9993;
-    --line: #2c2c29;
-    --up: #4cb07c;
-    --down: #e0675c;
-    --partial: #d9a23a;
-    --early: #77766f;
+    --bg: #0b0d14;
+    --surface: #141826;
+    --raised: #1c2132;
+    --ink: #f6f0e4;
+    --muted: #8b8f9c;
+    --faint: #626a7e;
+    --line: #232737;
+
+    --brand: #1b2a4d;
+    --brand-2: #243765;
+    --brand-soft: #1b1f2e;
+
+    --accent: #ff8d73;
+    --accent-ink: #ffb09c;
+    --accent-soft: #3a1b14;
+
+    --up: #4ad395;
+    --up-soft: #0f2a1f;
+    --down: #ff7a68;
+    --down-soft: #341712;
+    --partial: #e6a84a;
+    --partial-soft: #33270b;
+    --early: #a7a596;
+    --early-soft: #26241d;
+
+    --c-blue: #7fb0ff;
+    --c-blue-soft: #14233f;
+    --c-violet: #c4a1ff;
+    --c-violet-soft: #251a40;
+    --c-teal: #5eead4;
+    --c-teal-soft: #0c2a2b;
+    --c-amber: #fbbf24;
+    --c-amber-soft: #33270b;
+    --c-rose: #ff8fb8;
+    --c-rose-soft: #37152a;
+    --c-slate: #a3adc4;
+    --c-slate-soft: #1c2030;
+
+    --card-shadow: 0 0 0 1px rgb(255 255 255 / 0.02), 0 14px 34px -18px rgb(0 0 0 / 0.7);
+    --dock-shadow: 0 10px 34px -8px rgb(0 0 0 / 0.75), 0 0 0 1px rgb(255 255 255 / 0.06);
   }
 }
 
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
+  --color-raised: var(--raised);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
+  --color-faint: var(--faint);
   --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+  --color-brand-soft: var(--brand-soft);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
   --color-up: var(--up);
+  --color-up-soft: var(--up-soft);
   --color-down: var(--down);
+  --color-down-soft: var(--down-soft);
   --color-partial: var(--partial);
+  --color-partial-soft: var(--partial-soft);
   --color-early: var(--early);
-  --font-sans: var(--font-inter);
-  --font-serif: var(--font-newsreader);
+  --color-early-soft: var(--early-soft);
+  --font-sans: var(--font-geist);
+  --font-serif: var(--font-instrument);
 }
 
 html,
@@ -47,28 +125,77 @@ body {
   color: var(--ink);
 }
 
+/* Browser surfaces carry the palette too, so nothing ships a default accent. */
+::selection { background: var(--accent); color: #ffffff; }
+* { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 99px; border: 2px solid var(--bg); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+a, button { -webkit-tap-highlight-color: color-mix(in srgb, var(--accent) 25%, transparent); }
+
 body {
-  font-family: var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-geist), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   font-feature-settings: "tnum" 1;
 }
 
-/* Motion only with purpose: sheets slide up, cards swipe. */
-@keyframes sheet-in {
-  from { transform: translateY(24px); opacity: 0; }
-  to { transform: none; opacity: 1; }
+/* Surfaces. Cards sit on cream and need a visible warm hairline, not a shadow. */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--card-shadow);
 }
-.sheet-in { animation: sheet-in 180ms ease-out; }
+.glass {
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: saturate(160%) blur(14px);
+  -webkit-backdrop-filter: saturate(160%) blur(14px);
+}
+.grad-brand {
+  background-image: linear-gradient(135deg, var(--brand), var(--brand-2));
+}
 
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* Today hero: navy field with a coral count. One single surface, no gradient hero. */
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  color: #f6f0e4;
+  background: var(--brand);
+  box-shadow: 0 18px 40px -20px rgb(20 33 61 / 0.5);
 }
-.fade-in { animation: fade-in 160ms ease-out; }
+.hero > * { position: relative; z-index: 1; }
+
+/* Accent surface: coral button and pill. */
+.btn-accent {
+  background: var(--accent);
+  color: #ffffff;
+}
+.btn-accent:active { filter: brightness(0.95); }
+
+/* Motion with purpose: sheets slide, cards settle in, progress breathes. */
+@keyframes sheet-in { from { transform: translateY(28px); opacity: 0; } to { transform: none; opacity: 1; } }
+.sheet-in { animation: sheet-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.fade-in { animation: fade-in 180ms ease-out; }
+@keyframes rise { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+.rise { animation: rise 380ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.grow-x { transform-origin: left; animation: grow-x 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes pulse-dot { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+.pulse-dot { animation: pulse-dot 1.1s ease-in-out infinite; }
+@keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 70% { transform: scale(1.06); } 100% { transform: scale(1); opacity: 1; } }
+.pop { animation: pop 420ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+@keyframes count-in { from { opacity: 0; transform: translateY(0.12em); } to { opacity: 1; transform: none; } }
+.count-in { display: inline-block; animation: count-in 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 
 @media (prefers-reduced-motion: reduce) {
-  .sheet-in, .fade-in { animation: none; }
+  .sheet-in, .fade-in, .rise, .grow-x, .pulse-dot, .pop { animation: none; }
 }
 
 details > summary { list-style: none; }
 details > summary::-webkit-details-marker { display: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+input[type="range"] { accent-color: var(--accent); }

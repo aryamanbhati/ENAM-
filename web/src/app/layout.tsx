@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Newsreader } from "next/font/google";
+import { Geist, Instrument_Serif } from "next/font/google";
 import { AskProvider } from "@/components/Ask";
 import { BottomNav } from "@/components/BottomNav";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const newsreader = Newsreader({ subsets: ["latin"], variable: "--font-newsreader" });
+const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
+const instrument = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--font-instrument" });
 
 export const metadata: Metadata = {
   title: "FINN",
@@ -19,17 +19,17 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fbfaf7" },
-    { media: "(prefers-color-scheme: dark)", color: "#121211" },
+    { media: "(prefers-color-scheme: light)", color: "#f4f5fa" },
+    { media: "(prefers-color-scheme: dark)", color: "#080a11" },
   ],
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${newsreader.variable}`}>
+      <body className={`${geist.variable} ${instrument.variable}`}>
         <AskProvider>
-          <main className="mx-auto min-h-dvh max-w-md px-5 pb-36">{children}</main>
+          <main className="mx-auto min-h-dvh max-w-md px-4 pb-44">{children}</main>
           <BottomNav />
         </AskProvider>
         <ServiceWorker />

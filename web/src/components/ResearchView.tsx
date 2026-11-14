@@ -53,30 +53,34 @@ export function ResearchView({ company, research: r, promises, docs }: { company
       {/* 2. scorecard */}
       <section>
         {total === 0 ? (
-          <p className="font-serif text-xl">No explicit guidance found in the last {r.transcripts ?? 0} transcripts.</p>
+          <div className="card p-5">
+            <p className="font-serif text-xl leading-snug">No explicit guidance found in the last {r.transcripts ?? 0} transcripts.</p>
+            <p className="mt-2 text-sm text-muted">Management made no checkable commitment on headline numbers, so there is nothing to hold them to yet.</p>
+          </div>
         ) : (
-          <>
-            <p className="font-serif text-[28px] leading-tight">{keptLine(s).head}</p>
-            <p className="mt-1 text-sm text-muted">
+          <div className="card p-5">
+            <p className="font-serif text-[30px] leading-[1.05] tracking-tight">{keptLine(s).head}</p>
+            <p className="mt-1.5 text-sm text-muted">
               {total} commitment{total === 1 ? "" : "s"} tracked{keptLine(s).sub ? `: ${keptLine(s).sub}` : ""}.
             </p>
-            <div className="mt-3 flex h-2.5 overflow-hidden rounded-full bg-line" role="img" aria-label="Promise verdicts">
-              {BAR_ORDER.map((v) => (s[v] ? <span key={v} className={VERDICT[v].bar} style={{ width: `${(s[v] / total) * 100}%` }} /> : null))}
+            <div className="mt-4 flex h-3 overflow-hidden rounded-full bg-line" role="img" aria-label="Promise verdicts">
+              {BAR_ORDER.map((v) => (s[v] ? <span key={v} className={`grow-x ${VERDICT[v].bar}`} style={{ width: `${(s[v] / total) * 100}%` }} /> : null))}
             </div>
-            <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+            <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs">
               {BAR_ORDER.filter((v) => s[v]).map((v) => (
-                <li key={v} className={VERDICT[v].color}>
-                  <span className="tabular-nums">{s[v]}</span> {VERDICT[v].label.toLowerCase()}
+                <li key={v} className="flex items-center gap-1.5">
+                  <span className={`h-2 w-2 rounded-full ${VERDICT[v].bar}`} />
+                  <span className="tabular-nums font-medium">{s[v]}</span> <span className="text-muted">{VERDICT[v].label.toLowerCase()}</span>
                 </li>
               ))}
             </ul>
-          </>
+          </div>
         )}
       </section>
 
       {/* 3. promise cards */}
       {promises.length > 0 && (
-        <section className="divide-y divide-line border-y border-line">
+        <section className="space-y-3">
           {promises.map((p) => (
             <PromiseCard key={p.id} p={p} docUrl={docUrl} onAsk={(q) => ask(q)} />
           ))}
@@ -111,6 +115,36 @@ export function ResearchView({ company, research: r, promises, docs }: { company
   );
 }
 
+function Gauge({ p }: { p: PromiseRow }) {
+  const actual = p.detail?.actual;
+  if (!actual || actual.value == null || !p.target) return null;
+  const m = String(p.target).match(/-?\d+(\.\d+)?/);
+  const guide = m ? parseFloat(m[0]) : NaN;
+  if (!isFinite(guide) || guide === 0) return null;
+  const delivered = actual.value;
+  const max = Math.max(guide, delivered, 0) * 1.15 || 1;
+  const unit = actual.unit === "pct" ? "%" : "";
+  const hit = delivered >= guide;
+  return (
+    <div className="mt-3">
+      <div className="relative h-6 overflow-hidden rounded-lg bg-raised">
+        <span className={`absolute inset-y-1 left-1 rounded-md ${hit ? "bg-up" : "bg-down"}`} style={{ width: `calc(${Math.max(Math.min((delivered / max) * 100, 100), 4)}% - 8px)` }} />
+        <span className="absolute inset-y-0 w-0.5 bg-ink" style={{ left: `${Math.min((guide / max) * 100, 99)}%` }} aria-hidden title={`Guided ${guide}${unit}`} />
+      </div>
+      <div className="mt-1.5 flex justify-between text-[11px] tabular-nums">
+        <span className={hit ? "font-medium text-up" : "font-medium text-down"}>
+          Delivered {delivered}
+          {unit}
+        </span>
+        <span className="text-muted">
+          Guided {p.target}
+          {unit} · {actual.complete ? "full year" : `${actual.quarters.length} of 4 quarters`}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function PromiseCard({ p, docUrl, onAsk }: { p: PromiseRow; docUrl: Map<number, string>; onAsk: (q: string) => void }) {
   const [open, setOpen] = useState(false);
   const v = VERDICT[p.verdict];
@@ -120,15 +154,19 @@ function PromiseCard({ p, docUrl, onAsk }: { p: PromiseRow; docUrl: Map<number, 
   } catch {}
   const mentions = [...p.mentions].sort((a, b) => periodKey(a.period) - periodKey(b.period));
   return (
-    <article className="py-4">
+    <article className="card overflow-hidden p-4">
       <button onClick={() => setOpen((o) => !o)} className="block w-full text-left" aria-expanded={open}>
-        <div className="flex items-baseline justify-between gap-2">
-          <span className={`text-[11px] font-medium uppercase tracking-wide ${v.color}`}>{v.label}</span>
-          <span className="text-[11px] text-muted">{p.topic}</span>
+        <div className="flex items-center justify-between gap-2">
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${v.soft} ${v.color}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${v.bar}`} />
+            {v.label}
+          </span>
+          <span className="truncate text-[11px] text-muted">{p.topic}</span>
         </div>
-        <p className="mt-1 font-serif text-[19px] leading-snug">{card.headline || p.topic}</p>
-        {p.status_line && <p className="mt-1 text-sm tabular-nums">{p.status_line}</p>}
-        <span className="mt-2 flex items-center gap-1 text-xs text-muted">
+        <p className="mt-2.5 font-serif text-[20px] leading-snug">{card.headline || p.topic}</p>
+        {p.status_line && <p className="mt-1 text-[13px] tabular-nums text-muted">{p.status_line}</p>}
+        <Gauge p={p} />
+        <span className="mt-3 flex items-center gap-1 text-xs font-medium text-accent-ink">
           {open ? "Hide" : "Show"} the quarter-by-quarter record <Chevron className={`h-3 w-3 transition-transform ${open ? "rotate-90" : ""}`} />
         </span>
       </button>

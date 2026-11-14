@@ -115,8 +115,8 @@ export function TriggerSettings({ initial, vapidKey }: { initial: Triggers; vapi
 
 function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
-    <button role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)} className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${on ? "bg-ink" : "bg-line"}`}>
-      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-bg transition-transform ${on ? "translate-x-[18px]" : "translate-x-0.5"}`} />
+    <button role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)} className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${on ? "bg-[var(--accent)]" : "bg-line"}`}>
+      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${on ? "translate-x-[18px]" : "translate-x-0.5"}`} />
     </button>
   );
 }

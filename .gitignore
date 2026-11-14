@@ -22,3 +22,12 @@ out/
 Thumbs.db
 .vscode/
 .idea/
+
+# local design tooling and throwaway mockups
+.claude/skills/
+.impeccable/
+.agents/
+web/public/design/
+docs/design/
+PRODUCT.md
+skills-lock.json

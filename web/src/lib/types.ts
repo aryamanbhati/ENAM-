@@ -62,7 +62,7 @@ export type Item =
   | { kind: "filing"; key: string; tier: Tier; at: string; company: Company; weight: number; filing: Filing }
   | { kind: "signal"; key: string; tier: Tier; at: string; company: Company; weight: number; signal: Signal; explainedBy: Filing | null; move: number | null; volume: number | null };
 
-export type Holding = Company & { weight: number; close: number | null; move: number | null; volMult: number | null; needs: number; worth: number };
+export type Holding = Company & { weight: number; close: number | null; move: number | null; volMult: number | null; needs: number; worth: number; spark: number[] };
 
 export type Triggers = {
   categories: Record<string, boolean>;

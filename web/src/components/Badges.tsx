@@ -1,36 +1,111 @@
+import { categoryLabel } from "@/lib/format";
 import type { PromiseRow, Tier } from "@/lib/types";
 
 export const TIER_LABEL: Record<Tier, string> = { needs_you: "Needs you", worth_knowing: "Worth knowing", routine: "Routine" };
 
 export function TierBadge({ tier }: { tier: Tier }) {
-  const cls = tier === "needs_you" ? "border-ink text-ink" : "border-line text-muted";
-  return <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${cls}`}>{TIER_LABEL[tier]}</span>;
+  const cls = tier === "needs_you" ? "bg-[var(--accent)] text-white" : tier === "worth_knowing" ? "bg-raised text-muted" : "bg-raised text-early";
+  return <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${cls}`}>{TIER_LABEL[tier]}</span>;
+}
+
+/* Company monogram: a stable gradient per symbol, so a feed scans by colour. */
+const GRADS: [string, string][] = [
+  ["#6366f1", "#a855f7"],
+  ["#0ea5e9", "#6366f1"],
+  ["#14b8a6", "#0ea5e9"],
+  ["#f59e0b", "#ef4444"],
+  ["#ec4899", "#8b5cf6"],
+  ["#10b981", "#0d9488"],
+  ["#f97316", "#ec4899"],
+  ["#3b82f6", "#06b6d4"],
+];
+export function Avatar({ symbol, size = 38 }: { symbol: string; size?: number }) {
+  let h = 0;
+  for (const c of symbol) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  const [a, b] = GRADS[h % GRADS.length];
+  return (
+    <span
+      aria-hidden
+      className="inline-flex shrink-0 items-center justify-center font-semibold tracking-tight text-white"
+      style={{ width: size, height: size, borderRadius: size * 0.32, fontSize: size * 0.34, backgroundImage: `linear-gradient(135deg, ${a}, ${b})` }}
+    >
+      {symbol.slice(0, 2)}
+    </span>
+  );
+}
+
+const TONE: Record<string, string> = {
+  results: "blue",
+  management_change: "violet",
+  "M&A": "teal",
+  fund_raise: "amber",
+  credit_rating: "amber",
+  litigation: "rose",
+  pledging: "rose",
+  insider_trading: "rose",
+  dividend: "teal",
+  bonus_split: "teal",
+  earnings_call: "blue",
+  capex: "teal",
+  market: "violet",
+};
+export function CatChip({ category, label }: { category: string | null | undefined; label?: string }) {
+  const tone = (category && TONE[category]) || "slate";
+  return (
+    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium" style={{ color: `var(--c-${tone})`, background: `var(--c-${tone}-soft)` }}>
+      {label ?? categoryLabel(category)}
+    </span>
+  );
 }
 
 export function PageChip({ page, href, label }: { page: number | null | undefined; href?: string | null; label?: string }) {
   if (!page && !label) return null;
   const text = label ?? `p.${page}`;
-  const cls = "ml-1 inline-flex items-center rounded border border-line px-1 align-[1px] text-[10px] tabular-nums text-muted hover:border-ink hover:text-ink";
+  const cls = "ml-1.5 inline-flex items-center rounded-md bg-accent-soft px-1.5 py-px align-[1px] text-[10px] font-medium tabular-nums text-accent-ink";
   if (!href) return <span className={cls}>{text}</span>;
   const url = page ? `${href}#page=${page}` : href;
   return (
-    <a href={url} target="_blank" rel="noreferrer" className={cls} title="Open the source at this page">
+    <a href={url} target="_blank" rel="noreferrer" className={`${cls} hover:underline`} title="Open the source at this page">
       {text}
     </a>
   );
 }
 
-export function Move({ v, className = "" }: { v: number | null | undefined; className?: string }) {
-  if (v === null || v === undefined) return <span className={`text-muted ${className}`}>n/a</span>;
+/** Plain coloured figure. */
+export function Move({ v, className = "", digits = 1 }: { v: number | null | undefined; className?: string; digits?: number }) {
+  if (v === null || v === undefined) return <span className={`text-faint ${className}`}>n/a</span>;
   const cls = v > 0.05 ? "text-up" : v < -0.05 ? "text-down" : "text-muted";
-  return <span className={`tabular-nums ${cls} ${className}`}>{`${v > 0 ? "+" : ""}${v.toFixed(1)}%`}</span>;
+  return <span className={`tabular-nums ${cls} ${className}`}>{`${v > 0 ? "+" : ""}${v.toFixed(digits)}%`}</span>;
 }
 
-export const VERDICT: Record<PromiseRow["verdict"], { label: string; color: string; bar: string }> = {
-  delivered: { label: "Delivered", color: "text-up", bar: "bg-up" },
-  partly: { label: "Partly", color: "text-partial", bar: "bg-partial" },
-  missed: { label: "Missed", color: "text-down", bar: "bg-down" },
-  dropped: { label: "Quietly dropped", color: "text-down", bar: "bg-down/55" },
-  too_early: { label: "Too early", color: "text-early", bar: "bg-early/60" },
-  not_measurable: { label: "Not measurable", color: "text-early", bar: "bg-line" },
+/** Figure on a soft tinted pill with a direction arrow. */
+export function MovePill({ v, className = "" }: { v: number | null | undefined; className?: string }) {
+  if (v === null || v === undefined) return <span className={`rounded-full bg-early-soft px-2 py-0.5 text-xs text-early ${className}`}>n/a</span>;
+  const up = v > 0.05;
+  const down = v < -0.05;
+  const cls = up ? "bg-up-soft text-up" : down ? "bg-down-soft text-down" : "bg-early-soft text-early";
+  return (
+    <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${cls} ${className}`}>
+      <span className="text-[8px]">{up ? "▲" : down ? "▼" : "■"}</span>
+      {Math.abs(v).toFixed(1)}%
+    </span>
+  );
+}
+
+export const VERDICT: Record<PromiseRow["verdict"], { label: string; color: string; bar: string; soft: string }> = {
+  delivered: { label: "Delivered", color: "text-up", bar: "bg-up", soft: "bg-up-soft" },
+  partly: { label: "Partly delivered", color: "text-partial", bar: "bg-partial", soft: "bg-partial-soft" },
+  missed: { label: "Missed", color: "text-down", bar: "bg-down", soft: "bg-down-soft" },
+  dropped: { label: "Quietly dropped", color: "text-down", bar: "bg-down/45", soft: "bg-down-soft" },
+  too_early: { label: "Too early", color: "text-early", bar: "bg-early/50", soft: "bg-early-soft" },
+  not_measurable: { label: "Not measurable", color: "text-early", bar: "bg-line", soft: "bg-early-soft" },
 };
+
+export function SectionTitle({ children, count }: { children: React.ReactNode; count?: number }) {
+  return (
+    <h2 className="mb-2.5 flex items-center gap-2 px-1 text-[13px] font-semibold text-ink">
+      {children}
+      {count !== undefined && <span className="rounded-full bg-early-soft px-1.5 py-px text-[11px] font-medium tabular-nums text-muted">{count}</span>}
+    </h2>
+  );
+}

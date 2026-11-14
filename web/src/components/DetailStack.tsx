@@ -54,7 +54,7 @@ export function DetailStack(props: Props) {
           </button>
           <div className="flex gap-1" aria-hidden>
             {list.map((_, i) => (
-              <span key={i} className={`h-1 rounded-full ${i === index ? "w-4 bg-ink" : "w-1.5 bg-line"}`} />
+              <span key={i} className={`h-1 rounded-full transition-all ${i === index ? "w-5 bg-accent" : "w-1.5 bg-line"}`} />
             ))}
           </div>
           <span className="text-xs tabular-nums text-muted">{done ? "Done" : `${index + 1} of ${list.length}`}</span>

@@ -61,14 +61,17 @@ export async function marketState(companyIds: number[]): Promise<Map<number, { c
   return out;
 }
 
-export async function itemsInWindow(hours: number): Promise<{ items: Item[]; failed: boolean }> {
+export async function itemsInWindow(hours: number, range?: { from: string; to: string }): Promise<{ items: Item[]; failed: boolean }> {
   try {
-    const since = new Date(Date.now() - hours * 3600e3).toISOString();
-    const sinceDate = since.slice(0, 10);
+    // Custom ranges are whole IST days, inclusive.
+    const since = range ? new Date(`${range.from}T00:00:00+05:30`).toISOString() : new Date(Date.now() - hours * 3600e3).toISOString();
+    const until = range ? new Date(`${range.to}T23:59:59+05:30`).toISOString() : new Date(Date.now() + 3600e3).toISOString();
+    const sinceDate = range ? range.from : since.slice(0, 10);
+    const untilDate = range ? range.to : "2999-12-31";
     const [{ companies, weights }, fr, sr, trig] = await Promise.all([
       portfolio(),
-      db().from("filings").select(FILING_COLS).gte("filed_at", since).order("filed_at", { ascending: false }).limit(2000),
-      db().from("signals").select("*").gte("date", sinceDate).order("date", { ascending: false }),
+      db().from("filings").select(FILING_COLS).gte("filed_at", since).lte("filed_at", until).order("filed_at", { ascending: false }).limit(2000),
+      db().from("signals").select("*").gte("date", sinceDate).lte("date", untilDate).order("date", { ascending: false }),
       triggers(),
     ]);
     const filings = (fr.data ?? []) as Filing[];
@@ -174,7 +177,7 @@ export async function holdings(): Promise<Holding[]> {
       const c = companies.get(id)!;
       const s = m.get(id);
       const n = counts.get(id) ?? { needs: 0, worth: 0 };
-      return { ...c, weight: weights.get(id)!, close: s?.close ?? null, move: s?.move ?? null, volMult: s?.volMult ?? null, ...n };
+      return { ...c, weight: weights.get(id)!, close: s?.close ?? null, move: s?.move ?? null, volMult: s?.volMult ?? null, spark: s?.series.slice(-22).map((r) => r.close) ?? [], ...n };
     })
     .sort((a, b) => b.needs - a.needs || Math.abs(b.move ?? 0) - Math.abs(a.move ?? 0));
 }
