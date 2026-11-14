@@ -31,3 +31,6 @@ web/public/design/
 docs/design/
 PRODUCT.md
 skills-lock.json
+
+.vercel
+.env*

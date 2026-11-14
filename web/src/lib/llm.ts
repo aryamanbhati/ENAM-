@@ -12,14 +12,14 @@ import { db } from "./db";
  * still serve embeddings (Groq does not expose any).
  */
 const CHAINS = {
-  cheap: process.env.FINN_MODEL_CHEAP || "groq/llama-3.1-8b-instant,groq/llama-3.3-70b-versatile,gemini-2.5-flash-lite,gemini-1.5-flash-8b",
-  strong: process.env.FINN_MODEL_STRONG || "groq/llama-3.3-70b-versatile,groq/llama-3.1-70b-versatile,gemini-2.5-flash,gemini-1.5-flash",
+  cheap: process.env.FINN_MODEL_CHEAP || "groq/openai/gpt-oss-20b,groq/openai/gpt-oss-120b,gemini-2.5-flash-lite,gemini-1.5-flash-8b",
+  strong: process.env.FINN_MODEL_STRONG || "groq/openai/gpt-oss-120b,groq/qwen/qwen3.8-27b,gemini-2.5-flash,gemini-1.5-flash",
   embed: process.env.FINN_EMBED_MODEL || "gemini-embedding-001",
 };
 const PRICE: [string, number, number][] = [
-  ["llama-3.1-8b", 0.05, 0.08],
-  ["llama-3.3-70b", 0.59, 0.79],
-  ["llama-3.1-70b", 0.59, 0.79],
+  ["gpt-oss-20b", 0.1, 0.5],
+  ["gpt-oss-120b", 0.15, 0.75],
+  ["qwen3", 0.29, 0.59],
   ["flash-lite", 0.1, 0.4],
   ["embedding", 0.15, 0],
   ["pro", 1.25, 10],
@@ -29,6 +29,11 @@ const PRICE: [string, number, number][] = [
 const google = createGoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY });
 const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
 
+/** Chain entries carry provider as a prefix:
+ *    "groq/<model id>"   e.g. "groq/openai/gpt-oss-120b"
+ *    "gemini/<model id>" or a bare "gemini-..." name
+ *  The Groq model id can itself contain slashes (openai/gpt-oss-120b), so
+ *  only the FIRST "groq/" segment is the provider prefix. */
 function pick(name: string): { provider: "groq" | "google"; model: string } {
   if (name.startsWith("groq/")) return { provider: "groq", model: name.slice(5) };
   return { provider: "google", model: name.replace(/^gemini\//, "") };
@@ -39,7 +44,10 @@ export function models(tier: "cheap" | "strong" | "embed"): string[] {
     .split(",")
     .map((m) => m.trim())
     .filter(Boolean)
-    .filter((m) => (m.startsWith("groq/") ? !!process.env.GROQ_API_KEY : true));
+    .filter((m) => {
+      if (m.startsWith("groq/")) return !!process.env.GROQ_API_KEY;
+      return !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY);
+    });
 }
 
 export function cost(model: string, tin: number, tout: number): number {
