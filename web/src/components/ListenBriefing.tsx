@@ -81,10 +81,10 @@ export function ListenBriefing({ lines }: { lines: string[] }) {
   return (
     <button
       onClick={play}
-      className="flex items-center gap-1.5 text-[12px] text-muted transition-colors hover:text-ink"
+      className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-bg/90 transition-colors hover:text-bg"
       aria-pressed={state === "playing"}
     >
-      <Speaker className={`h-4 w-4 ${state === "playing" ? "text-accent" : ""}`} />
+      <Speaker className={`h-[18px] w-[18px] ${state === "playing" ? "text-accent" : ""}`} />
       {state === "loading" ? "Loading…" : state === "playing" ? "Stop" : "Listen"}
     </button>
   );

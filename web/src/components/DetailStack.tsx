@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { categoryLabel, cleanSubject, dateLabel, naturalTitle, pct, relTime, shortName } from "@/lib/format";
+import { categoryLabel, cleanSubject, dateLabel, pct, relTime, shortName } from "@/lib/format";
 import type { Item, Tier } from "@/lib/types";
 import { useAsk } from "./Ask";
 import { Move, PageChip, TIER_LABEL, TierBadge } from "./Badges";
@@ -62,7 +62,7 @@ export function DetailStack(props: Props) {
 
         <div
           ref={scroller}
-          className="flex-1 overflow-y-auto px-5 pb-40"
+          className="flex-1 overflow-y-auto px-5 pb-28"
           style={{ transform: `translateX(${dx}px)`, transition: start.current ? "none" : "transform 180ms ease-out" }}
           onPointerDown={(e) => {
             start.current = { x: e.clientX, y: e.clientY };
@@ -88,12 +88,19 @@ export function DetailStack(props: Props) {
         </div>
 
         {!done && (
-          <div className="pointer-events-none fixed inset-x-0 bottom-[calc(112px+env(safe-area-inset-bottom))] z-40">
-            <div className="mx-auto flex max-w-md justify-between px-5">
-              <button onClick={() => go(-1)} disabled={index === 0} className="pointer-events-auto rounded-full border border-line bg-surface px-3 py-1 text-xs disabled:opacity-0">
+          <div className="glass pointer-events-none fixed inset-x-0 bottom-0 z-40 border-t border-line pb-[max(env(safe-area-inset-bottom),0.6rem)] pt-2.5">
+            <div className="mx-auto flex max-w-md items-center justify-center gap-3 px-5">
+              <button
+                onClick={() => go(-1)}
+                disabled={index === 0}
+                className="pointer-events-auto inline-flex min-h-[40px] items-center rounded-full border border-line bg-surface px-4 text-[13px] font-medium disabled:opacity-0"
+              >
                 ← Previous
               </button>
-              <button onClick={() => go(1)} className="pointer-events-auto rounded-full border border-line bg-surface px-3 py-1 text-xs">
+              <button
+                onClick={() => go(1)}
+                className="pointer-events-auto inline-flex min-h-[40px] items-center rounded-full bg-ink px-5 text-[13px] font-semibold text-bg"
+              >
                 {index === list.length - 1 ? "Finish" : "Next →"}
               </button>
             </div>
@@ -136,7 +143,7 @@ function Detail({ item, counts, historySince, series }: { item: Item } & Props) 
           {itemKind(item)} · {item.kind === "filing" ? dateLabel(item.at) : new Date(item.signal.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
         </p>
         <h2 className="text-[24px] font-semibold leading-[1.2] tracking-[-0.02em] text-ink">
-          {naturalTitle(itemTitle(item), item.company.name, 160)}
+          {itemTitle(item)}
         </h2>
         <p className="text-[15px] leading-relaxed text-muted">
           <span className="text-ink">Why this is here: </span>

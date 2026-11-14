@@ -88,7 +88,7 @@ const VERB_FIRST = new Set([
   "Intimates", "Informs", "Discloses", "Clarifies", "Withdraws",
 ]);
 
-export function naturalTitle(raw: string | null | undefined, companyName: string | null | undefined, max = 90): string {
+export function naturalTitle(raw: string | null | undefined, companyName: string | null | undefined, max = 220): string {
   const text = cleanSubject(raw ?? "").replace(/\s+/g, " ").trim();
   if (!text) return "";
   const first = text.split(/\s+/)[0];
@@ -97,10 +97,13 @@ export function naturalTitle(raw: string | null | undefined, companyName: string
     const subj = shortName(companyName);
     out = `${subj} ${first.toLowerCase()}${text.slice(first.length)}`;
   }
+  // Only a safety ceiling for pathological lengths. Card display truncation is
+  // done in CSS (.clamp-2), which never leaves a dangling "...from". So the
+  // detail view, which does not clamp, still receives the whole sentence.
   if (out.length > max) {
     const cut = out.slice(0, max);
     const stop = cut.lastIndexOf(" ");
-    out = cut.slice(0, stop > 60 ? stop : max).trim() + "…";
+    out = cut.slice(0, stop > 120 ? stop : max).trim() + "…";
   }
   return out;
 }

@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { Close, Mic } from "./icons";
 
 /** What the assistant knows about where the user is. Set by each screen and by the open card. */
@@ -129,7 +130,13 @@ function AskSheet({ turns, busy }: { turns: Turn[]; busy: boolean }) {
   const [q, setQ] = useState("");
   const end = useRef<HTMLDivElement>(null);
   const speech = useSpeech(useCallback((t: string) => ask(t), [ask]));
-  useEffect(() => end.current?.scrollIntoView({ behavior: "smooth" }), [turns, busy]);
+  // Braces matter: in current Chrome, scrollIntoView({behavior:"smooth"}) returns
+  // a Promise. An expression-arrow effect would hand that Promise to React as its
+  // cleanup, and the next run would call it as destroy() -> "destroy is not a
+  // function" and the whole app white-screens. Keep the body a statement.
+  useEffect(() => {
+    end.current?.scrollIntoView({ behavior: "smooth" });
+  }, [turns, busy]);
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-label="Ask FINN">
@@ -154,7 +161,11 @@ function AskSheet({ turns, busy }: { turns: Turn[]; busy: boolean }) {
           {turns.map((t, i) => (
             <div key={i} className="space-y-2">
               <p className="text-[14px] font-medium">{t.q}</p>
-              {t.a && <AnswerView a={t.a} />}
+              {t.a && (
+                <ErrorBoundary>
+                  <AnswerView a={t.a} />
+                </ErrorBoundary>
+              )}
               {t.error && <p className="text-[14px] text-down">{t.error}</p>}
               {!t.a && !t.error && (
                 <div className="space-y-2" aria-label="Reading the sources">

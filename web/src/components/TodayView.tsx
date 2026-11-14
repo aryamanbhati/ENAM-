@@ -49,7 +49,19 @@ export function TodayView(props: TodayProps) {
   const { items, win, range, failed, upcoming } = props;
   const tiers = useMemo(() => {
     const t: Record<Tier, Item[]> = { needs_you: [], worth_knowing: [], routine: [] };
-    for (const i of items) t[i.tier].push(i);
+    // De-duplicate: the same corporate event often arrives as several filings on
+    // the same day (e.g. a quarter's results as a revenue filing + a results
+    // filing). Collapse those into the first (newest, richest) card per
+    // company+category+day so the feed does not show the same news three times.
+    const seen = new Set<string>();
+    for (const i of items) {
+      const cat = i.kind === "signal" ? "signal" : i.filing.finn_category ?? "x";
+      const day = i.at.slice(0, 10);
+      const dedupeKey = `${i.company.id}:${cat}:${day}`;
+      if (i.kind === "filing" && seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
+      t[i.tier].push(i);
+    }
     return t;
   }, [items]);
   const [open, setOpen] = useState<{ tier: Tier; index: number } | null>(null);
@@ -70,7 +82,24 @@ export function TodayView(props: TodayProps) {
   const r = tiers.routine.length;
   const total = items.length;
   const winLabel = win === "custom" && range ? `${fmtDay(range.from)} to ${fmtDay(range.to)}` : win === "24h" ? "last 24 hours" : win === "7d" ? "last 7 days" : "last 30 days";
-  const summary = n === 0 ? "Nothing needs you." : `${n} ${n === 1 ? "thing needs" : "things need"} you.`;
+
+  // Triage promise: the hero number must stay small and urgent. On wider windows
+  // the headline shows only what needs you in the last 24 hours; everything older
+  // in the window becomes a calm "+N earlier" line, not a 104-sized alarm.
+  const DAY = 864e5;
+  const cutoff = Date.now() - DAY;
+  const freshNeeds = win === "24h" ? n : tiers.needs_you.filter((i) => new Date(i.at).getTime() >= cutoff).length;
+  const olderNeeds = n - freshNeeds;
+  const heroCount = win === "24h" ? n : freshNeeds;
+  const heroVerb = heroCount === 1 ? "thing needs" : "things need";
+  const windowNoun = win === "7d" ? "this week" : win === "30d" ? "this month" : win === "custom" ? "in this range" : "today";
+
+  const summary =
+    heroCount === 0
+      ? olderNeeds > 0
+        ? `Nothing new today. ${olderNeeds} still need you ${windowNoun}.`
+        : "Nothing needs you."
+      : `${heroCount} ${heroVerb} you ${windowNoun}.`;
   const seg = (k: number) => `${total ? Math.max((k / total) * 100, k ? 4 : 0) : 0}%`;
 
   return (
@@ -82,18 +111,25 @@ export function TodayView(props: TodayProps) {
         <div className="flex justify-end">
           <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium opacity-80">{winLabel}</span>
         </div>
-        {n === 0 ? (
-          <p className="mt-3 font-serif text-[46px] leading-[1.0] tracking-[-0.025em]">You&apos;re clear.</p>
+        {heroCount === 0 ? (
+          <p className="mt-3 text-[40px] font-semibold leading-[1.05] tracking-[-0.03em]">
+            {olderNeeds > 0 ? "Nothing new today." : "You're clear."}
+          </p>
         ) : (
-          <p className="mt-1 font-serif text-[46px] leading-[1.0] tracking-[-0.025em]">
-            <span className="count-in text-[76px] leading-none" style={{ color: "var(--accent)" }}>
-              {n}
+          <p className="mt-1 text-[38px] font-semibold leading-[1.05] tracking-[-0.03em]">
+            <span className="count-in text-[64px] font-semibold leading-none" style={{ color: "var(--accent)" }}>
+              {heroCount}
             </span>{" "}
-            {n === 1 ? "thing needs" : "things need"} you.
+            {heroVerb} you <span className="opacity-80">{windowNoun}</span>.
           </p>
         )}
         <p className="mt-3 text-[13px] opacity-80">
-          {total} item{total === 1 ? "" : "s"} read. {r} routine filing{r === 1 ? "" : "s"} hidden.
+          {olderNeeds > 0 && (
+            <>
+              <b className="font-semibold">+{olderNeeds}</b> earlier {windowNoun}.{" "}
+            </>
+          )}
+          {total} item{total === 1 ? "" : "s"} read, {r} routine hidden.
         </p>
 
         {total > 0 && (
@@ -117,9 +153,12 @@ export function TodayView(props: TodayProps) {
           </div>
         )}
 
-        <div className="mt-5 flex items-center gap-2.5">
+        <div className="mt-5 flex items-center gap-2">
           {n > 0 && (
-            <button onClick={() => setOpen({ tier: "needs_you", index: 0 })} className="btn-accent rounded-full px-4 py-2 text-[13px] font-semibold shadow-sm active:scale-[0.98]">
+            <button
+              onClick={() => setOpen({ tier: "needs_you", index: 0 })}
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-bg px-5 text-[14px] font-semibold text-ink transition-transform active:scale-[0.98]"
+            >
               Start briefing →
             </button>
           )}
@@ -146,7 +185,7 @@ export function TodayView(props: TodayProps) {
               return (
                 <Link key={u.symbol + u.date} href={`/company/${u.symbol}`} className="card flex shrink-0 items-center gap-3 !rounded-2xl px-3 py-2.5">
                   <span className="flex h-11 w-11 flex-col items-center justify-center rounded-xl bg-brand-soft leading-none text-brand">
-                    <span className="text-[9px] font-semibold uppercase">{d.toLocaleDateString("en-IN", { month: "short" })}</span>
+                    <span className="text-[10px] font-semibold uppercase">{d.toLocaleDateString("en-IN", { month: "short" })}</span>
                     <span className="text-base font-semibold tabular-nums">{d.getDate()}</span>
                   </span>
                   <span>
@@ -263,7 +302,7 @@ function WindowPicker({ win, range }: { win: WindowKey | "custom"; range?: { fro
               role="tab"
               aria-selected={t.key === win}
               scroll={false}
-              className={`relative z-[1] flex-1 rounded-full py-1.5 text-center transition-colors ${t.key === win ? "text-bg" : "text-muted hover:text-ink"}`}
+              className={`relative z-[1] flex min-h-[40px] flex-1 items-center justify-center rounded-full text-center transition-colors ${t.key === win ? "text-bg" : "text-muted hover:text-ink"}`}
             >
               {t.label}
             </Link>
@@ -273,7 +312,7 @@ function WindowPicker({ win, range }: { win: WindowKey | "custom"; range?: { fro
               role="tab"
               aria-selected={win === "custom"}
               onClick={() => setCustom((c) => !c)}
-              className={`relative z-[1] flex flex-1 items-center justify-center gap-1 rounded-full py-1.5 transition-colors ${win === "custom" ? "text-bg" : custom ? "text-brand" : "text-muted hover:text-ink"}`}
+              className={`relative z-[1] flex min-h-[40px] flex-1 items-center justify-center gap-1 rounded-full transition-colors ${win === "custom" ? "text-bg" : custom ? "text-brand" : "text-muted hover:text-ink"}`}
             >
               <Calendar className="h-3.5 w-3.5" /> {t.label}
             </button>
@@ -341,7 +380,7 @@ function NeedsCard({ item, onOpen, delay, spark }: { item: Item; onOpen: () => v
                 <div className={`text-[15px] font-semibold tabular-nums ${r.yoy === null ? "text-early" : up ? "text-up" : down ? "text-down" : "text-early"}`}>
                   {r.yoy === null ? "n/a" : `${r.yoy > 0 ? "+" : ""}${r.yoy.toFixed(1)}%`}
                 </div>
-                <div className="text-[9px] uppercase tracking-wide text-faint">YoY</div>
+                <div className="text-[10px] uppercase tracking-wide text-faint">YoY</div>
               </div>
             );
           })}
