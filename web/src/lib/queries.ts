@@ -5,6 +5,47 @@ import type { Company, Doc, Filing, Holding, Item, PromiseRow, Research, Signal,
 const FILING_COLS =
   "id,company_id,filed_at,category,subcategory,subject,headline,pdf_url,finn_category,tier,tier_source,confidence,reason,summary,enrichment,summary_status,trigger_eligible";
 
+export type FactRow = { period: string; metric: string; value: number; unit: string };
+export type CompanyMetrics = {
+  facts: FactRow[];
+  turnover: { count: number; last: { name: string; role: string; change: string; at: string }[] };
+};
+
+/** Last N quarters of the headline facts (revenue, OPM, PAT, operating profit).
+ *  Plus a 12-month count of management-change filings. All derived from
+ *  existing tables; no new LLM calls. */
+export async function companyMetrics(companyId: number, quarters = 8): Promise<CompanyMetrics> {
+  const since = new Date(Date.now() - 400 * 864e5).toISOString();
+  const [{ data: facts }, { data: mgmt }] = await Promise.all([
+    db()
+      .from("facts")
+      .select("period,metric,value,unit")
+      .eq("company_id", companyId)
+      .in("metric", ["revenue", "operating_profit", "pat", "opm_pct", "npm_pct"])
+      .order("period", { ascending: false })
+      .limit(quarters * 5),
+    db()
+      .from("filings")
+      .select("filed_at,enrichment")
+      .eq("company_id", companyId)
+      .eq("finn_category", "management_change")
+      .gte("filed_at", since)
+      .order("filed_at", { ascending: false })
+      .limit(40),
+  ]);
+  type MgmtEnrich = { people?: { name: string; role: string; change: string }[] };
+  const last: CompanyMetrics["turnover"]["last"] = [];
+  for (const m of (mgmt ?? []) as { filed_at: string; enrichment: MgmtEnrich | null }[]) {
+    const p = m.enrichment?.people?.[0];
+    if (p) last.push({ name: p.name, role: p.role, change: p.change, at: m.filed_at });
+    if (last.length >= 5) break;
+  }
+  return {
+    facts: ((facts ?? []) as FactRow[]).map((f) => ({ ...f, value: Number(f.value) })),
+    turnover: { count: (mgmt ?? []).length, last },
+  };
+}
+
 export async function portfolio(): Promise<{ companies: Map<number, Company>; weights: Map<number, number> }> {
   const [{ data: cs }, { data: hs }] = await Promise.all([
     db().from("companies").select("id,nse_symbol,bse_code,name,sector"),

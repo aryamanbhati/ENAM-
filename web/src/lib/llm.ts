@@ -1,16 +1,25 @@
 import "server-only";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createGroq } from "@ai-sdk/groq";
 import { embed, generateObject, type LanguageModel } from "ai";
 import type { z } from "zod";
 import { db } from "./db";
 
-/** Model names come from env (same chains as the worker). The first available model in a chain is used. */
+/**
+ * Model chains. Groq's Llama 3.3 70B is the default for the assistant: it is
+ * an order of magnitude faster than Gemini Flash and good enough on structured
+ * output for our schemas. Gemini models stay in the chain as a fallback and
+ * still serve embeddings (Groq does not expose any).
+ */
 const CHAINS = {
-  cheap: process.env.FINN_MODEL_CHEAP || "gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-3.5-flash",
-  strong: process.env.FINN_MODEL_STRONG || "gemini-3.6-flash,gemini-3.5-flash,gemini-3.8-flash,gemini-3.5-flash-lite",
+  cheap: process.env.FINN_MODEL_CHEAP || "groq/llama-3.1-8b-instant,groq/llama-3.3-70b-versatile,gemini-2.5-flash-lite,gemini-1.5-flash-8b",
+  strong: process.env.FINN_MODEL_STRONG || "groq/llama-3.3-70b-versatile,groq/llama-3.1-70b-versatile,gemini-2.5-flash,gemini-1.5-flash",
   embed: process.env.FINN_EMBED_MODEL || "gemini-embedding-001",
 };
 const PRICE: [string, number, number][] = [
+  ["llama-3.1-8b", 0.05, 0.08],
+  ["llama-3.3-70b", 0.59, 0.79],
+  ["llama-3.1-70b", 0.59, 0.79],
   ["flash-lite", 0.1, 0.4],
   ["embedding", 0.15, 0],
   ["pro", 1.25, 10],
@@ -18,9 +27,19 @@ const PRICE: [string, number, number][] = [
 ];
 
 const google = createGoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY });
+const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
+
+function pick(name: string): { provider: "groq" | "google"; model: string } {
+  if (name.startsWith("groq/")) return { provider: "groq", model: name.slice(5) };
+  return { provider: "google", model: name.replace(/^gemini\//, "") };
+}
 
 export function models(tier: "cheap" | "strong" | "embed"): string[] {
-  return CHAINS[tier].split(",").map((m) => m.trim().replace(/^gemini\//, "")).filter(Boolean);
+  return CHAINS[tier]
+    .split(",")
+    .map((m) => m.trim())
+    .filter(Boolean)
+    .filter((m) => (m.startsWith("groq/") ? !!process.env.GROQ_API_KEY : true));
 }
 
 export function cost(model: string, tin: number, tout: number): number {
@@ -48,21 +67,26 @@ export type CallOpts = { deadline?: number; perCallMs?: number; thinking?: numbe
 export async function structured<T>(step: string, tier: "cheap" | "strong", schema: z.ZodType<T>, system: string, prompt: string, opts: CallOpts = {}): Promise<{ object: T; usage: Usage }> {
   let last: unknown;
   const deadline = opts.deadline ?? Date.now() + 50_000;
-  for (const name of models(tier)) {
+  for (const full of models(tier)) {
+    const { provider, model: name } = pick(full);
     for (let attempt = 0; attempt < 2; attempt++) {
       const left = deadline - Date.now();
       if (left < 2500) throw new Error(`${step}: out of time`);
       const t0 = Date.now();
       try {
+        const mdl = provider === "groq" ? (groq(name) as LanguageModel) : (google(name) as LanguageModel);
         const r = await generateObject({
-          model: google(name) as LanguageModel,
+          model: mdl,
           schema,
           system,
           prompt,
           temperature: 0.1,
           maxRetries: 0,
           abortSignal: AbortSignal.timeout(Math.min(left, opts.perCallMs ?? left)),
-          providerOptions: opts.thinking !== undefined ? { google: { thinkingConfig: { thinkingBudget: opts.thinking } } } : undefined,
+          providerOptions:
+            provider === "google" && opts.thinking !== undefined
+              ? { google: { thinkingConfig: { thinkingBudget: opts.thinking } } }
+              : undefined,
         });
         const tin = r.usage?.inputTokens ?? 0;
         const tout = r.usage?.outputTokens ?? 0;

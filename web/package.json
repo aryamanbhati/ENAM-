@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.118",
+    "@ai-sdk/groq": "^4.0.84",
     "@supabase/supabase-js": "^2.119.0",
     "ai": "^7.0.170",
     "next": "15.5.29",
+    "openai": "^7.57.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "server-only": "^0.0.1",
