@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { categoryLabel, cleanSubject, dateLabel, pct, relTime, shortName } from "@/lib/format";
+import { categoryLabel, cleanSubject, dateLabel, naturalTitle, pct, relTime, shortName } from "@/lib/format";
 import type { Item, Tier } from "@/lib/types";
 import { useAsk } from "./Ask";
 import { Move, PageChip, TIER_LABEL, TierBadge } from "./Badges";
@@ -135,8 +135,10 @@ function Detail({ item, counts, historySince, series }: { item: Item } & Props) 
         <p className="text-xs text-muted">
           {itemKind(item)} · {item.kind === "filing" ? dateLabel(item.at) : new Date(item.signal.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
         </p>
-        <h2 className="font-serif text-[26px] leading-tight">{itemTitle(item)}</h2>
-        <p className="text-sm text-muted">
+        <h2 className="text-[24px] font-semibold leading-[1.2] tracking-[-0.02em] text-ink">
+          {naturalTitle(itemTitle(item), item.company.name, 160)}
+        </h2>
+        <p className="text-[15px] leading-relaxed text-muted">
           <span className="text-ink">Why this is here: </span>
           {item.kind === "signal"
             ? `${item.move !== null ? `Moved ${pct(item.move)}` : ""}${item.move !== null && item.volume !== null ? " and traded " : ""}${item.volume !== null ? `${item.volume.toFixed(1)}× its 20-day average volume` : ""}, past your alert threshold.`
@@ -209,7 +211,7 @@ function Detail({ item, counts, historySince, series }: { item: Item } & Props) 
                 {p.effective ? `, effective ${p.effective}` : ""}
               </p>
               {p.bio ? (
-                <p className="mt-1 font-serif text-[15px] leading-relaxed">
+                <p className="mt-2 text-[16px] leading-[1.55] text-ink">
                   {p.bio}
                   <PageChip page={p.bio_page} href={f?.pdf_url} />
                   {p.bio_source === "outside" && <span className="ml-1 text-[10px] text-muted">(outside source)</span>}
@@ -225,11 +227,11 @@ function Detail({ item, counts, historySince, series }: { item: Item } & Props) 
       {/* 3. key points */}
       {points.length > 0 && (
         <section>
-          <h3 className="mb-2 font-serif text-[17px] tracking-[-0.01em] text-ink">Key points</h3>
-          <ul className="space-y-2 font-serif text-[15px] leading-relaxed">
+          <h3 className="mb-3 text-[17px] font-semibold tracking-[-0.01em] text-ink">Key points</h3>
+          <ul className="space-y-3 text-[16px] leading-[1.55] text-ink">
             {points.map((p, i) => (
-              <li key={i} className="flex gap-2">
-                <span className="text-muted">·</span>
+              <li key={i} className="flex gap-3">
+                <span className="mt-2 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-ink/60" />
                 <span>
                   {p.text}
                   <PageChip page={p.page} href={f?.pdf_url} />

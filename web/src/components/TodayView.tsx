@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { categoryLabel, cleanSubject, relTime, shortName, WINDOWS, type WindowKey } from "@/lib/format";
+import { categoryLabel, cleanSubject, naturalTitle, relTime, shortName, WINDOWS, type WindowKey } from "@/lib/format";
 import type { Item, Tier } from "@/lib/types";
 import { AskScopeSetter } from "./Ask";
 import { Avatar, CatChip, MovePill, SectionTitle } from "./Badges";
@@ -24,13 +24,15 @@ export type TodayProps = {
 
 export function itemTitle(i: Item): string {
   if (i.kind === "signal") {
-    const parts = [];
-    if (i.move !== null) parts.push(`${i.move > 0 ? "Up" : "Down"} ${Math.abs(i.move).toFixed(1)}%`);
-    if (i.volume !== null) parts.push(`${i.volume.toFixed(1)}× usual volume`);
-    return parts.join(" on ");
+    const name = shortName(i.company.name);
+    const parts: string[] = [];
+    if (i.move !== null) parts.push(`${i.move > 0 ? "up" : "down"} ${Math.abs(i.move).toFixed(1)}%`);
+    if (i.volume !== null) parts.push(`${i.volume.toFixed(1)}× its usual volume`);
+    return `${name} ${parts.join(" on ")}`;
   }
   const f = i.filing;
-  return f.enrichment?.one_line || f.summary || cleanSubject(f.headline && f.headline.length > 12 ? f.headline : f.subject) || f.subcategory || "Filing";
+  const raw = f.enrichment?.one_line || f.summary || (f.headline && f.headline.length > 12 ? f.headline : f.subject) || f.subcategory || "Filing";
+  return naturalTitle(raw, i.company.name);
 }
 
 export function itemKind(i: Item): string {
@@ -179,7 +181,7 @@ export function TodayView(props: TodayProps) {
               <button key={i.key} onClick={() => setOpen({ tier: "worth_knowing", index: idx })} className="flex w-full items-center gap-3 px-3.5 py-3 text-left active:bg-raised">
                 <Avatar symbol={i.company.nse_symbol} name={i.company.name} size={32} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13.5px] font-medium">{itemTitle(i)}</span>
+                  <span className="clamp-2 block text-[14px] font-medium leading-snug">{itemTitle(i)}</span>
                   <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted">
                     {i.company.nse_symbol}
                     <span className="text-faint">·</span>
@@ -317,7 +319,7 @@ function NeedsCard({ item, onOpen, delay, spark }: { item: Item; onOpen: () => v
         {item.kind === "signal" && item.move !== null && <MovePill v={item.move} />}
       </div>
 
-      <p className="mt-3 font-serif text-[23px] leading-[1.15] tracking-tight">{itemTitle(item)}</p>
+      <p className="clamp-2 mt-3 text-[18px] font-semibold leading-[1.3] tracking-[-0.01em] text-ink">{itemTitle(item)}</p>
 
       {item.kind === "signal" && (
         <div className="mt-3 flex items-center gap-3 rounded-2xl bg-raised px-3 py-2.5">

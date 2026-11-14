@@ -77,7 +77,6 @@ export function AskProvider({ children }: { children: React.ReactNode }) {
   return (
     <AskCtx.Provider value={{ scope, setScope, ask, open, setOpen }}>
       {children}
-      <AskBar />
       <AskSheet turns={turns} busy={busy} />
     </AskCtx.Provider>
   );
@@ -125,60 +124,38 @@ function useSpeech(onText: (t: string) => void) {
   };
 }
 
-function AskBar() {
-  const { scope, ask, open } = useAsk();
-  const [q, setQ] = useState("");
-  const speech = useSpeech(useCallback((t: string) => ask(t), [ask]));
-  if (open) return null;
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        ask(q);
-        setQ("");
-      }}
-      className="fixed inset-x-0 bottom-[calc(52px+env(safe-area-inset-bottom))] z-[45] px-4 pb-2"
-    >
-      <div className="mx-auto flex max-w-md items-center gap-2 rounded-full border border-line bg-surface px-4 py-2 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder={PLACEHOLDER[scope.screen]}
-          className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
-          aria-label="Ask FINN"
-        />
-        {speech.supported && (
-          <button type="button" onClick={speech.toggle} aria-label={speech.listening ? "Stop listening" : "Speak your question"} className={`-m-1 p-1 ${speech.listening ? "text-down" : "text-muted"}`}>
-            <Mic className="h-4 w-4" />
-          </button>
-        )}
-      </div>
-    </form>
-  );
-}
-
 function AskSheet({ turns, busy }: { turns: Turn[]; busy: boolean }) {
   const { open, setOpen, ask, scope } = useAsk();
   const [q, setQ] = useState("");
   const end = useRef<HTMLDivElement>(null);
+  const speech = useSpeech(useCallback((t: string) => ask(t), [ask]));
   useEffect(() => end.current?.scrollIntoView({ behavior: "smooth" }), [turns, busy]);
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-label="Ask FINN">
-      <button className="absolute inset-0 bg-black/25" aria-label="Close" onClick={() => setOpen(false)} />
-      <div className="sheet-in relative mx-auto flex max-h-[62dvh] w-full max-w-md flex-col rounded-t-2xl border border-line bg-surface pb-[env(safe-area-inset-bottom)]">
-        <div className="flex items-center justify-between px-5 pb-2 pt-3">
-          <span className="text-xs text-muted">{scopeLabel(scope)}</span>
-          <button onClick={() => setOpen(false)} aria-label="Close" className="-m-2 p-2 text-muted">
+      <button className="absolute inset-0 bg-black/30" aria-label="Close" onClick={() => setOpen(false)} />
+      <div className="sheet-in relative mx-auto flex max-h-[72dvh] w-full max-w-md flex-col rounded-t-[28px] border border-line bg-surface pb-[env(safe-area-inset-bottom)] shadow-[0_-20px_40px_-20px_rgba(16,20,32,0.25)]">
+        <div className="flex items-center justify-between px-5 pb-2 pt-4">
+          <span className="flex items-center gap-2 text-[12px] text-muted">
+            <span className="inline-block h-2 w-2 animate-pulse rounded-full" style={{ background: "var(--accent)" }} />
+            {scopeLabel(scope)}
+          </span>
+          <button onClick={() => setOpen(false)} aria-label="Close" className="-m-2 p-2 text-muted hover:text-ink">
             <Close className="h-4 w-4" />
           </button>
         </div>
-        <div className="flex-1 space-y-5 overflow-y-auto px-5 pb-3">
+        <div className="flex-1 space-y-6 overflow-y-auto px-5 pb-3">
+          {turns.length === 0 && (
+            <div className="pt-4">
+              <p className="text-[18px] font-semibold text-ink">Hi, I&apos;m FINN.</p>
+              <p className="mt-1 text-[14px] text-muted">{PLACEHOLDER[scope.screen]}.</p>
+            </div>
+          )}
           {turns.map((t, i) => (
             <div key={i} className="space-y-2">
-              <p className="text-sm font-medium">{t.q}</p>
+              <p className="text-[14px] font-medium">{t.q}</p>
               {t.a && <AnswerView a={t.a} />}
-              {t.error && <p className="text-sm text-down">{t.error}</p>}
+              {t.error && <p className="text-[14px] text-down">{t.error}</p>}
               {!t.a && !t.error && (
                 <div className="space-y-2" aria-label="Reading the sources">
                   <div className="sk h-3 w-5/6" />
@@ -196,9 +173,26 @@ function AskSheet({ turns, busy }: { turns: Turn[]; busy: boolean }) {
             ask(q);
             setQ("");
           }}
-          className="border-t border-line px-4 py-3"
+          className="mx-4 my-3 flex items-center gap-2 rounded-full border border-line bg-raised px-4 py-2"
         >
-          <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} disabled={busy} placeholder="Ask a follow-up" className="w-full bg-transparent text-sm outline-none placeholder:text-muted" />
+          <input
+            autoFocus
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            disabled={busy}
+            placeholder={turns.length ? "Ask a follow-up" : PLACEHOLDER[scope.screen]}
+            className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-muted"
+          />
+          {speech.supported && (
+            <button
+              type="button"
+              onClick={speech.toggle}
+              aria-label={speech.listening ? "Stop listening" : "Speak your question"}
+              className={`-m-1 p-1 ${speech.listening ? "text-down" : "text-muted"}`}
+            >
+              <Mic className="h-4 w-4" />
+            </button>
+          )}
         </form>
       </div>
     </div>

@@ -4,7 +4,7 @@ import { AskScopeSetter } from "@/components/Ask";
 import { Avatar, Move, SegmentedBar, StatusChip, TierBadge, VERDICT } from "@/components/Badges";
 import { Masthead } from "@/components/Masthead";
 import { PriceChart } from "@/components/PriceChart";
-import { categoryLabel, cleanSubject, keptLine, relTime, shortName } from "@/lib/format";
+import { categoryLabel, keptLine, naturalTitle, relTime, shortName } from "@/lib/format";
 import { companyBySymbol, companyFilings, marketState, portfolio, research } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -74,8 +74,8 @@ export default async function CompanyHub({ params }: { params: Promise<{ symbol:
                 </span>
                 <TierBadge tier={f.tier} />
               </div>
-              <p className="mt-1.5 line-clamp-2 text-[14px] leading-snug text-ink">
-                {f.enrichment?.one_line || cleanSubject(f.headline && f.headline.length > 12 ? f.headline : f.subject)}
+              <p className="clamp-2 mt-1.5 text-[15px] font-medium leading-snug text-ink">
+                {naturalTitle(f.enrichment?.one_line || (f.headline && f.headline.length > 12 ? f.headline : f.subject), c.name)}
               </p>
               {f.pdf_url && (
                 <a

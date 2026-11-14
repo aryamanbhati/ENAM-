@@ -68,6 +68,44 @@ export function num(v: number | null | undefined, unit: string): string {
 }
 
 /**
+ * Natural display title for a filing. Takes whatever string we have
+ * (enrichment.one_line, headline, or cleaned subject) and makes it read as a
+ * complete news sentence:
+ *   - If it starts with a bare verb ("Appoints…", "Reports…", "Wins…"), it
+ *     gets the company short name prepended and the first letter lowercased,
+ *     so "Appoints Priya Rao" → "HDFC Bank appoints Priya Rao".
+ *   - If it already starts with the company name or a subject, it is returned
+ *     as is.
+ *   - It is trimmed to ~90 chars on the last whole word, with an ellipsis.
+ * Trailing full stops kept, repeated whitespace collapsed.
+ */
+const VERB_FIRST = new Set([
+  "Appoints", "Reappoints", "Re-appoints", "Resigns", "Removes", "Elects",
+  "Reports", "Posts", "Announces", "Declares", "Approves", "Confirms",
+  "Wins", "Secures", "Receives", "Signs", "Enters", "Raises", "Issues",
+  "Allots", "Allocates", "Acquires", "Invests", "Launches", "Expands",
+  "Starts", "Begins", "Completes", "Closes", "Opens", "Ends", "Updates",
+  "Intimates", "Informs", "Discloses", "Clarifies", "Withdraws",
+]);
+
+export function naturalTitle(raw: string | null | undefined, companyName: string | null | undefined, max = 90): string {
+  const text = cleanSubject(raw ?? "").replace(/\s+/g, " ").trim();
+  if (!text) return "";
+  const first = text.split(/\s+/)[0];
+  let out = text;
+  if (companyName && VERB_FIRST.has(first)) {
+    const subj = shortName(companyName);
+    out = `${subj} ${first.toLowerCase()}${text.slice(first.length)}`;
+  }
+  if (out.length > max) {
+    const cut = out.slice(0, max);
+    const stop = cut.lastIndexOf(" ");
+    out = cut.slice(0, stop > 60 ? stop : max).trim() + "…";
+  }
+  return out;
+}
+
+/**
  * Clean a quoted passage pulled from a source document. Replaces OCR-style
  * double hyphens with a real em dash and tidies spacing. Used only inside a
  * blockquote: FINN's own copy still avoids em dashes per CLAUDE.md.
