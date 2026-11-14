@@ -17,7 +17,7 @@ export function Masthead({ title, sub, back, brand }: { title: string; sub?: str
             </span>
           )}
           <div className="min-w-0">
-            <h1 className={`truncate tracking-tight ${brand ? "text-[17px] font-semibold" : "font-serif text-[26px] leading-tight"}`}>{title}</h1>
+            <h1 className={`truncate ${brand ? "text-[17px] font-semibold tracking-tight" : "font-serif text-[27px] leading-none tracking-[-0.02em]"}`}>{title}</h1>
             {sub && <p className="truncate text-[11px] text-muted">{sub}</p>}
           </div>
         </div>

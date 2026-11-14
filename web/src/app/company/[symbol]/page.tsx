@@ -42,7 +42,7 @@ export default async function CompanyHub({ params }: { params: Promise<{ symbol:
       {m && <div className="mt-3"><Sparkline points={m.series.slice(-30)} /></div>}
 
       <section className="mt-6">
-        <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">Recent filings</h2>
+        <h2 className="mb-1 font-serif text-[17px] tracking-[-0.01em] text-ink">Recent filings</h2>
         <ul className="divide-y divide-line">
           {material.slice(0, 12).map((f) => (
             <li key={f.id} className="py-3">
@@ -66,7 +66,7 @@ export default async function CompanyHub({ params }: { params: Promise<{ symbol:
       </section>
 
       <section className="mt-8 rounded-lg border border-line p-4">
-        <h2 className="text-xs font-medium uppercase tracking-wide text-muted">Promised vs delivered</h2>
+        <h2 className="font-serif text-[17px] tracking-[-0.01em] text-ink">Promised vs delivered</h2>
         {r?.status === "ready" && r.scorecard ? (
           <>
             <p className="mt-2 font-serif text-xl">{keptLine(r.scorecard).head}</p>

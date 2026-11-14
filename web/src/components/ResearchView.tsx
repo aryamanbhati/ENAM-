@@ -90,7 +90,7 @@ export function ResearchView({ company, research: r, promises, docs }: { company
       {/* 4. suggested questions */}
       {r.questions && r.questions.length > 0 && (
         <section>
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Questions worth asking</h3>
+          <h3 className="mb-2 font-serif text-[17px] tracking-[-0.01em] text-ink">Questions worth asking</h3>
           <div className="flex flex-wrap gap-2">
             {r.questions.map((q) => (
               <button key={q.q} onClick={() => ask(q.q)} className="rounded-full border border-line px-3 py-1.5 text-left text-xs hover:border-ink">

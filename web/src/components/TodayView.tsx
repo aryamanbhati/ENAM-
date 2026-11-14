@@ -77,15 +77,14 @@ export function TodayView(props: TodayProps) {
 
       {/* Hero: the count is the headline. Coral is reserved for it and the one action. */}
       <section className="hero rise p-5" aria-live="polite">
-        <div className="flex items-center justify-between text-[10.5px] font-medium uppercase tracking-[0.18em] opacity-70">
-          <span>Your briefing</span>
-          <span className="normal-case tracking-normal opacity-100">{winLabel}</span>
+        <div className="flex justify-end">
+          <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium opacity-80">{winLabel}</span>
         </div>
         {n === 0 ? (
-          <p className="mt-3 font-serif text-[46px] leading-[1.02] tracking-tight">You&apos;re clear.</p>
+          <p className="mt-3 font-serif text-[46px] leading-[1.0] tracking-[-0.025em]">You&apos;re clear.</p>
         ) : (
-          <p className="mt-2 font-serif text-[46px] leading-[1.02] tracking-tight">
-            <span className="count-in text-[72px] leading-none" style={{ color: "var(--accent)" }}>
+          <p className="mt-1 font-serif text-[46px] leading-[1.0] tracking-[-0.025em]">
+            <span className="count-in text-[76px] leading-none" style={{ color: "var(--accent)" }}>
               {n}
             </span>{" "}
             {n === 1 ? "thing needs" : "things need"} you.

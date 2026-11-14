@@ -163,7 +163,7 @@ function Detail({ item, counts, historySince, series }: { item: Item } & Props) 
 
       {e?.kind === "results" && (
         <section>
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
+          <h3 className="mb-2 font-serif text-[17px] tracking-[-0.01em] text-ink">
             {e.period} results, {e.basis}
           </h3>
           <table className="w-full text-sm tabular-nums">
@@ -225,7 +225,7 @@ function Detail({ item, counts, historySince, series }: { item: Item } & Props) 
       {/* 3. key points */}
       {points.length > 0 && (
         <section>
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Key points</h3>
+          <h3 className="mb-2 font-serif text-[17px] tracking-[-0.01em] text-ink">Key points</h3>
           <ul className="space-y-2 font-serif text-[15px] leading-relaxed">
             {points.map((p, i) => (
               <li key={i} className="flex gap-2">
@@ -263,7 +263,7 @@ function Detail({ item, counts, historySince, series }: { item: Item } & Props) 
 
       {/* 6. next steps */}
       <section>
-        <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Ask next</h3>
+        <h3 className="mb-2 font-serif text-[17px] tracking-[-0.01em] text-ink">Ask next</h3>
         <div className="flex flex-wrap gap-2">
           {questions.map((q) => (
             <button key={q} onClick={() => ask(q)} className="rounded-full border border-line px-3 py-1.5 text-xs hover:border-ink">

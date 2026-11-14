@@ -76,9 +76,14 @@ export const VERDICT: Record<PromiseRow["verdict"], { label: string; color: stri
 
 export function SectionTitle({ children, count }: { children: React.ReactNode; count?: number }) {
   return (
-    <h2 className="mb-2.5 flex items-center gap-2 px-1 text-[13px] font-semibold text-ink">
+    <h2 className="mb-3 flex items-baseline gap-2 px-1 font-serif text-[20px] leading-none tracking-[-0.01em] text-ink">
       {children}
-      {count !== undefined && <span className="rounded-full bg-early-soft px-1.5 py-px text-[11px] font-medium tabular-nums text-muted">{count}</span>}
+      {count !== undefined && <span className="font-sans text-[13px] font-medium tabular-nums text-muted">{count}</span>}
     </h2>
   );
+}
+
+/* Small label above a metric. The only place caps belong. Not a heading. */
+export function Eyebrow({ children }: { children: React.ReactNode }) {
+  return <span className="text-[10.5px] font-medium uppercase tracking-[0.16em] text-muted">{children}</span>;
 }

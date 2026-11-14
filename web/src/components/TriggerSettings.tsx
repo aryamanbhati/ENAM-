@@ -66,7 +66,7 @@ export function TriggerSettings({ initial, vapidKey }: { initial: Triggers; vapi
       </p>
 
       <section>
-        <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Notifications</h2>
+        <h2 className="mb-2 font-serif text-[17px] tracking-[-0.01em] text-ink">Notifications</h2>
         {push === "on" && <p className="text-sm">On for this device.</p>}
         {push === "off" && vapidKey && (
           <button onClick={enablePush} className="rounded-full bg-ink px-4 py-2 text-sm text-bg">
@@ -79,13 +79,13 @@ export function TriggerSettings({ initial, vapidKey }: { initial: Triggers; vapi
       </section>
 
       <section>
-        <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">Market moves</h2>
+        <h2 className="mb-1 font-serif text-[17px] tracking-[-0.01em] text-ink">Market moves</h2>
         <Slider label="Price move in a day" value={t.price_pct} min={1} max={15} step={0.5} unit="%" prefix="±" onChange={(v) => save({ ...t, price_pct: v })} />
         <Slider label="Volume above its 20-day average" value={t.volume_multiple} min={1.2} max={6} step={0.1} unit="×" onChange={(v) => save({ ...t, volume_multiple: v })} />
       </section>
 
       <section>
-        <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">Announcements</h2>
+        <h2 className="mb-1 font-serif text-[17px] tracking-[-0.01em] text-ink">Announcements</h2>
         <ul className="divide-y divide-line">
           {CATS.map((c) => (
             <li key={c} className="flex items-center justify-between gap-4 py-3">
@@ -100,7 +100,7 @@ export function TriggerSettings({ initial, vapidKey }: { initial: Triggers; vapi
       </section>
 
       <section>
-        <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">Morning digest</h2>
+        <h2 className="mb-1 font-serif text-[17px] tracking-[-0.01em] text-ink">Morning digest</h2>
         <label className="flex items-center justify-between py-2 text-sm">
           Notify me at
           <input type="time" value={t.digest_time} onChange={(e) => save({ ...t, digest_time: e.target.value })} className="rounded border border-line bg-surface px-2 py-1 tabular-nums" />
