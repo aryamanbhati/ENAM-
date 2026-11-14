@@ -46,51 +46,10 @@
 
   --card-shadow: 0 1px 1px rgb(20 33 61 / 0.04), 0 8px 24px -14px rgb(20 33 61 / 0.18);
   --dock-shadow: 0 10px 28px -10px rgb(20 33 61 / 0.35), 0 0 0 1px rgb(20 33 61 / 0.06);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0b0d14;
-    --surface: #141826;
-    --raised: #1c2132;
-    --ink: #f6f0e4;
-    --muted: #8b8f9c;
-    --faint: #626a7e;
-    --line: #232737;
-
-    --brand: #1b2a4d;
-    --brand-2: #243765;
-    --brand-soft: #1b1f2e;
-
-    --accent: #ff8d73;
-    --accent-ink: #ffb09c;
-    --accent-soft: #3a1b14;
-
-    --up: #4ad395;
-    --up-soft: #0f2a1f;
-    --down: #ff7a68;
-    --down-soft: #341712;
-    --partial: #e6a84a;
-    --partial-soft: #33270b;
-    --early: #a7a596;
-    --early-soft: #26241d;
-
-    --c-blue: #7fb0ff;
-    --c-blue-soft: #14233f;
-    --c-violet: #c4a1ff;
-    --c-violet-soft: #251a40;
-    --c-teal: #5eead4;
-    --c-teal-soft: #0c2a2b;
-    --c-amber: #fbbf24;
-    --c-amber-soft: #33270b;
-    --c-rose: #ff8fb8;
-    --c-rose-soft: #37152a;
-    --c-slate: #a3adc4;
-    --c-slate-soft: #1c2030;
-
-    --card-shadow: 0 0 0 1px rgb(255 255 255 / 0.02), 0 14px 34px -18px rgb(0 0 0 / 0.7);
-    --dock-shadow: 0 10px 34px -8px rgb(0 0 0 / 0.75), 0 0 0 1px rgb(255 255 255 / 0.06);
-  }
+  /* Three colours only: cream (page), navy (ink and emphasis), coral (accent).
+     Up/down keep a quiet green and coral. No category rainbow. Light only. */
+  color-scheme: light;
 }
 
 @theme inline {

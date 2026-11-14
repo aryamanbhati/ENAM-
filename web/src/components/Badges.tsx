@@ -8,51 +8,24 @@ export function TierBadge({ tier }: { tier: Tier }) {
   return <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${cls}`}>{TIER_LABEL[tier]}</span>;
 }
 
-/* Company monogram: a stable gradient per symbol, so a feed scans by colour. */
-const GRADS: [string, string][] = [
-  ["#6366f1", "#a855f7"],
-  ["#0ea5e9", "#6366f1"],
-  ["#14b8a6", "#0ea5e9"],
-  ["#f59e0b", "#ef4444"],
-  ["#ec4899", "#8b5cf6"],
-  ["#10b981", "#0d9488"],
-  ["#f97316", "#ec4899"],
-  ["#3b82f6", "#06b6d4"],
-];
+/* Company monogram: one navy tile with cream initials. No colour per company. */
 export function Avatar({ symbol, size = 38 }: { symbol: string; size?: number }) {
-  let h = 0;
-  for (const c of symbol) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  const [a, b] = GRADS[h % GRADS.length];
   return (
     <span
       aria-hidden
-      className="inline-flex shrink-0 items-center justify-center font-semibold tracking-tight text-white"
-      style={{ width: size, height: size, borderRadius: size * 0.32, fontSize: size * 0.34, backgroundImage: `linear-gradient(135deg, ${a}, ${b})` }}
+      className="inline-flex shrink-0 items-center justify-center bg-brand font-semibold tracking-tight"
+      style={{ width: size, height: size, borderRadius: size * 0.32, fontSize: size * 0.34, color: "#f6f0e4" }}
     >
       {symbol.slice(0, 2)}
     </span>
   );
 }
 
-const TONE: Record<string, string> = {
-  results: "blue",
-  management_change: "violet",
-  "M&A": "teal",
-  fund_raise: "amber",
-  credit_rating: "amber",
-  litigation: "rose",
-  pledging: "rose",
-  insider_trading: "rose",
-  dividend: "teal",
-  bonus_split: "teal",
-  earnings_call: "blue",
-  capex: "teal",
-  market: "violet",
-};
+/* Category chip: navy ink on a warm tint, same for every category. The tier badge
+   carries the only colour that matters (coral for Needs you). */
 export function CatChip({ category, label }: { category: string | null | undefined; label?: string }) {
-  const tone = (category && TONE[category]) || "slate";
   return (
-    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium" style={{ color: `var(--c-${tone})`, background: `var(--c-${tone}-soft)` }}>
+    <span className="inline-flex items-center rounded-full bg-raised px-2 py-0.5 text-[11px] font-medium text-brand">
       {label ?? categoryLabel(category)}
     </span>
   );

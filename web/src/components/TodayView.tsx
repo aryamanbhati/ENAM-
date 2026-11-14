@@ -316,7 +316,7 @@ function NeedsCard({ item, onOpen, delay, spark }: { item: Item; onOpen: () => v
 
       {e?.kind === "management" && e.people[0] && (
         <div className="mt-3 flex items-center gap-3 rounded-2xl bg-raised px-3 py-2.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold" style={{ color: "var(--c-violet)", background: "var(--c-violet-soft)" }}>
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand text-[12px] font-semibold" style={{ color: "#f6f0e4" }}>
             {e.people[0].name
               .replace(/^(Mr|Mrs|Ms|Dr|Shri|Smt)\.?\s+/i, "")
               .split(/\s+/)
