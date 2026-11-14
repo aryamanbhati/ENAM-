@@ -177,7 +177,7 @@ export function TodayView(props: TodayProps) {
           <div className="card divide-y divide-line overflow-hidden">
             {tiers.worth_knowing.map((i, idx) => (
               <button key={i.key} onClick={() => setOpen({ tier: "worth_knowing", index: idx })} className="flex w-full items-center gap-3 px-3.5 py-3 text-left active:bg-raised">
-                <Avatar symbol={i.company.nse_symbol} size={32} />
+                <Avatar symbol={i.company.nse_symbol} name={i.company.name} size={32} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[13.5px] font-medium">{itemTitle(i)}</span>
                   <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted">
@@ -273,7 +273,7 @@ function NeedsCard({ item, onOpen, delay, spark }: { item: Item; onOpen: () => v
   return (
     <button onClick={onOpen} className="card rise block w-full p-4 text-left active:scale-[0.99]" style={{ animationDelay: `${delay}ms` }}>
       <div className="flex items-center gap-3">
-        <Avatar symbol={item.company.nse_symbol} />
+        <Avatar symbol={item.company.nse_symbol} name={item.company.name} />
         <div className="min-w-0 flex-1">
           <div className="truncate text-[13.5px] font-semibold">{shortName(item.company.name)}</div>
           <div className="mt-0.5 flex items-center gap-1.5">

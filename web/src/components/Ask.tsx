@@ -179,7 +179,13 @@ function AskSheet({ turns, busy }: { turns: Turn[]; busy: boolean }) {
               <p className="text-sm font-medium">{t.q}</p>
               {t.a && <AnswerView a={t.a} />}
               {t.error && <p className="text-sm text-down">{t.error}</p>}
-              {!t.a && !t.error && <p className="text-sm text-muted">Reading the sources…</p>}
+              {!t.a && !t.error && (
+                <div className="space-y-2" aria-label="Reading the sources">
+                  <div className="sk h-3 w-5/6" />
+                  <div className="sk h-3 w-4/6" />
+                  <div className="sk h-3 w-3/6" />
+                </div>
+              )}
             </div>
           ))}
           <div ref={end} />

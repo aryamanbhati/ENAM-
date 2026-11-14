@@ -1,21 +1,33 @@
 import Link from "next/link";
 import { AskScopeSetter } from "@/components/Ask";
+import { Avatar, SegmentedBar } from "@/components/Badges";
 import { Masthead } from "@/components/Masthead";
 import { TickerSearch } from "@/components/TickerSearch";
-import { keptLine, shortName } from "@/lib/format";
+import { shortName } from "@/lib/format";
 import { researchedCompanies } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
+
+function summary(scorecard: Record<string, number> | null | undefined): { line: string; muted: boolean } {
+  const g = (k: string) => scorecard?.[k] ?? 0;
+  const total = g("total");
+  const judged = g("delivered") + g("partly") + g("missed");
+  if (!total) return { line: "No explicit guidance", muted: true };
+  if (judged === 0) return { line: `${total} tracked, none judged yet`, muted: true };
+  return { line: `${g("delivered")} of ${judged} kept`, muted: false };
+}
 
 export default async function ResearchIndex() {
   const rows = await researchedCompanies();
   return (
     <>
       <AskScopeSetter scope={{ screen: "portfolio" }} />
-      <Masthead title="Research" />
+      <Masthead title="Research" sub="Promises vs delivery" />
       <section className="pt-5">
-        <p className="font-serif text-[26px] leading-tight">What management promised, and what they delivered.</p>
-        <p className="mt-2 text-sm text-muted">
+        <p className="font-serif text-[26px] leading-[1.15] tracking-[-0.01em] text-ink">
+          What management promised, and what they delivered.
+        </p>
+        <p className="mt-2 text-sm leading-relaxed text-muted">
           Built only from the company&apos;s own concall transcripts and quarterly results. Every quote is checked against its page; every number is computed, not generated.
         </p>
         <div className="mt-4">
@@ -23,27 +35,48 @@ export default async function ResearchIndex() {
         </div>
       </section>
       <ul className="mt-6 divide-y divide-line">
-        {rows.map(({ company, research: r }) => (
-          <li key={company.id}>
-            <Link href={`/research/${company.nse_symbol}`} className="flex items-baseline justify-between gap-3 py-3">
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-medium">{shortName(company.name)}</span>
-                <span className="text-xs text-muted">{company.nse_symbol}</span>
-              </span>
-              <span className="shrink-0 text-right text-xs text-muted">
-                {r.status === "ready" && r.scorecard ? (
-                  <span className="block max-w-[11rem] font-serif text-sm leading-snug text-ink">{keptLine(r.scorecard).head}</span>
-                ) : r.status === "no_guidance" ? (
-                  "No explicit guidance"
-                ) : r.status === "running" ? (
-                  "Reading…"
-                ) : (
-                  r.status
-                )}
-              </span>
-            </Link>
-          </li>
-        ))}
+        {rows.map(({ company, research: r }) => {
+          const s = r.scorecard ?? null;
+          const info = summary(s);
+          return (
+            <li key={company.id}>
+              <Link
+                href={`/research/${company.nse_symbol}`}
+                className="group flex items-center gap-3 py-3.5 transition-colors active:bg-raised"
+              >
+                <Avatar symbol={company.nse_symbol} name={company.name} size={36} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[14px] font-semibold text-ink">
+                    {shortName(company.name)}
+                  </span>
+                  <span className="block text-[11px] text-muted">{company.nse_symbol}</span>
+                </span>
+                <span className="w-[140px] shrink-0 text-right">
+                  {r.status === "ready" && s ? (
+                    <>
+                      <span
+                        className={`block text-[12px] font-medium tabular-nums ${info.muted ? "text-muted" : "text-ink"}`}
+                      >
+                        {info.line}
+                      </span>
+                      <span className="mt-1.5 block">
+                        <SegmentedBar scorecard={s} compact showLegend={false} />
+                      </span>
+                    </>
+                  ) : r.status === "no_guidance" ? (
+                    <span className="text-[12px] text-muted">No explicit guidance</span>
+                  ) : r.status === "running" ? (
+                    <span className="inline-flex items-center gap-1 text-[12px] text-muted">
+                      <span className="sk inline-block h-2 w-16" />
+                    </span>
+                  ) : (
+                    <span className="text-[12px] text-muted">{r.status}</span>
+                  )}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
         {rows.length === 0 && <li className="py-3 text-sm text-muted">Nothing researched yet. Try a ticker above.</li>}
       </ul>
     </>

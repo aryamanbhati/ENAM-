@@ -67,6 +67,19 @@ export function num(v: number | null | undefined, unit: string): string {
   return v.toLocaleString("en-IN");
 }
 
+/**
+ * Clean a quoted passage pulled from a source document. Replaces OCR-style
+ * double hyphens with a real em dash and tidies spacing. Used only inside a
+ * blockquote: FINN's own copy still avoids em dashes per CLAUDE.md.
+ */
+export function cleanQuote(s: string | null | undefined): string {
+  if (!s) return "";
+  return s
+    .replace(/\s*--\s*/g, " — ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 /** Strips BSE boilerplate from a subject line so the human part shows. */
 export function cleanSubject(s: string | null | undefined): string {
   if (!s) return "";

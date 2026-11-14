@@ -1,12 +1,11 @@
 "use client";
 import { useState } from "react";
-import { keptLine, num, pct } from "@/lib/format";
+import { cleanQuote, keptLine, num, pct } from "@/lib/format";
 import type { Company, Doc, PromiseRow, Research } from "@/lib/types";
 import { useAsk } from "./Ask";
-import { PageChip, VERDICT } from "./Badges";
+import { PageChip, SegmentedBar, StatusChip } from "./Badges";
 import { Chevron } from "./icons";
 
-const BAR_ORDER: PromiseRow["verdict"][] = ["delivered", "partly", "missed", "dropped", "too_early", "not_measurable"];
 const MENTION_LABEL: Record<string, string> = { stated: "Stated", reiterated: "Reiterated", raised: "Raised", lowered: "Lowered", silent: "Silent" };
 
 export function ResearchView({ company, research: r, promises, docs }: { company: Company; research: Research; promises: PromiseRow[]; docs: Doc[] }) {
@@ -28,14 +27,16 @@ export function ResearchView({ company, research: r, promises, docs }: { company
           </p>
         )}
         {snap && (
-          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
+          <dl className="mt-4 grid grid-cols-2 gap-2">
             {snap.numbers.map((n) => (
-              <div key={n.label}>
-                <dt className="text-[11px] text-muted">{n.label}</dt>
-                <dd className="text-lg tabular-nums">
-                  {num(n.value, n.unit)}
-                  {n.yoy !== undefined && n.yoy !== null && <span className={`ml-1.5 text-xs ${n.yoy >= 0 ? "text-up" : "text-down"}`}>{pct(n.yoy)} YoY</span>}
-                </dd>
+              <div key={n.label} className="stat-tile">
+                <dt className="label">{n.label}</dt>
+                <dd className="value">{num(n.value, n.unit)}</dd>
+                {n.yoy !== undefined && n.yoy !== null && (
+                  <dd className={`text-[11px] font-medium tabular-nums ${n.yoy >= 0 ? "text-up" : "text-down"}`}>
+                    {pct(n.yoy)} YoY
+                  </dd>
+                )}
               </div>
             ))}
           </dl>
@@ -59,21 +60,13 @@ export function ResearchView({ company, research: r, promises, docs }: { company
           </div>
         ) : (
           <div className="card p-5">
-            <p className="font-serif text-[30px] leading-[1.05] tracking-tight">{keptLine(s).head}</p>
+            <p className="font-serif text-[28px] leading-[1.1] tracking-tight text-ink">{keptLine(s).head}</p>
             <p className="mt-1.5 text-sm text-muted">
               {total} commitment{total === 1 ? "" : "s"} tracked{keptLine(s).sub ? `: ${keptLine(s).sub}` : ""}.
             </p>
-            <div className="mt-4 flex h-3 overflow-hidden rounded-full bg-line" role="img" aria-label="Promise verdicts">
-              {BAR_ORDER.map((v) => (s[v] ? <span key={v} className={`grow-x ${VERDICT[v].bar}`} style={{ width: `${(s[v] / total) * 100}%` }} /> : null))}
+            <div className="mt-4">
+              <SegmentedBar scorecard={s} />
             </div>
-            <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs">
-              {BAR_ORDER.filter((v) => s[v]).map((v) => (
-                <li key={v} className="flex items-center gap-1.5">
-                  <span className={`h-2 w-2 rounded-full ${VERDICT[v].bar}`} />
-                  <span className="tabular-nums font-medium">{s[v]}</span> <span className="text-muted">{VERDICT[v].label.toLowerCase()}</span>
-                </li>
-              ))}
-            </ul>
           </div>
         )}
       </section>
@@ -147,7 +140,6 @@ function Gauge({ p }: { p: PromiseRow }) {
 
 function PromiseCard({ p, docUrl, onAsk }: { p: PromiseRow; docUrl: Map<number, string>; onAsk: (q: string) => void }) {
   const [open, setOpen] = useState(false);
-  const v = VERDICT[p.verdict];
   let card: { headline?: string; body?: string } = {};
   try {
     card = p.card_text ? JSON.parse(p.card_text) : {};
@@ -157,10 +149,7 @@ function PromiseCard({ p, docUrl, onAsk }: { p: PromiseRow; docUrl: Map<number, 
     <article className="card overflow-hidden p-4">
       <button onClick={() => setOpen((o) => !o)} className="block w-full text-left" aria-expanded={open}>
         <div className="flex items-center justify-between gap-2">
-          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${v.soft} ${v.color}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${v.bar}`} />
-            {v.label}
-          </span>
+          <StatusChip verdict={p.verdict} />
           <span className="truncate text-[11px] text-muted">{p.topic}</span>
         </div>
         <p className="mt-2.5 font-serif text-[20px] leading-snug">{card.headline || p.topic}</p>
@@ -182,7 +171,7 @@ function PromiseCard({ p, docUrl, onAsk }: { p: PromiseRow; docUrl: Map<number, 
                 </p>
                 {m.quote ? (
                   <blockquote className="mt-1 font-serif text-[14px] leading-relaxed text-ink/90">
-                    “{m.quote}”
+                    “{cleanQuote(m.quote)}”
                     <PageChip page={m.page} href={m.document_id ? docUrl.get(m.document_id) : null} />
                   </blockquote>
                 ) : (

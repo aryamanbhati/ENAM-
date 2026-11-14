@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Book, Briefcase, Sun } from "./icons";
 
 const TABS = [
@@ -9,24 +10,64 @@ const TABS = [
   { href: "/research", label: "Research", Icon: Book, match: (p: string) => p.startsWith("/research") },
 ];
 
-/** Floating dock. The active tab expands into a tinted pill with its label. */
+/**
+ * Bottom tab bar. The Ask input sits above it, together they form the dock the
+ * layout reserves space for. Active tab slides a cream thumb under itself and
+ * reveals its label. All three tabs show the same icon + label anatomy.
+ */
 export function BottomNav() {
   const path = usePathname();
+  const refs = useRef<Array<HTMLLIElement | null>>([]);
+  const [thumb, setThumb] = useState<{ left: number; width: number } | null>(null);
+  const activeIndex = TABS.findIndex((t) => t.match(path));
+
+  useLayoutEffect(() => {
+    const el = refs.current[activeIndex];
+    if (!el) return;
+    setThumb({ left: el.offsetLeft, width: el.offsetWidth });
+  }, [activeIndex, path]);
+
   return (
-    <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-4 pb-[max(env(safe-area-inset-bottom),0.75rem)]" aria-label="Main">
-      <ul className="glass pointer-events-auto mx-auto flex max-w-[22rem] items-center gap-1 rounded-full p-1.5" style={{ boxShadow: "var(--dock-shadow)" }}>
-        {TABS.map(({ href, label, Icon, match }) => {
+    <nav
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-4 pb-[max(env(safe-area-inset-bottom),0.6rem)]"
+      aria-label="Main"
+    >
+      <ul
+        className="glass pointer-events-auto relative mx-auto flex max-w-[22rem] items-center rounded-full p-1.5"
+        style={{ boxShadow: "var(--dock-shadow)" }}
+      >
+        {thumb && (
+          <span
+            aria-hidden
+            className="absolute top-1.5 bottom-1.5 rounded-full bg-brand transition-all duration-220"
+            style={{
+              left: thumb.left,
+              width: thumb.width,
+              transitionDuration: "var(--d-base)",
+              transitionTimingFunction: "var(--e-std)",
+            }}
+          />
+        )}
+        {TABS.map(({ href, label, Icon, match }, i) => {
           const active = match(path);
           return (
-            <li key={href} className={active ? "flex-[1.6]" : "flex-1"}>
+            <li
+              key={href}
+              ref={(el) => {
+                refs.current[i] = el;
+              }}
+              className="relative flex-1"
+            >
               <Link
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={`flex h-11 items-center justify-center gap-2 rounded-full text-[13px] font-medium transition-colors ${active ? "bg-brand" : "text-muted hover:text-ink"}`}
+                className={`relative z-[1] flex h-10 items-center justify-center gap-1.5 rounded-full text-[12.5px] font-medium transition-colors ${
+                  active ? "text-bg" : "text-muted hover:text-ink"
+                }`}
                 style={active ? { color: "#f6f0e4" } : undefined}
               >
-                <Icon className="h-5 w-5" />
-                {active ? label : <span className="sr-only">{label}</span>}
+                <Icon className="h-[18px] w-[18px]" />
+                <span>{label}</span>
               </Link>
             </li>
           );

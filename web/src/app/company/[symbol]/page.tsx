@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AskScopeSetter } from "@/components/Ask";
-import { Move, TierBadge, VERDICT } from "@/components/Badges";
+import { Avatar, Move, SegmentedBar, StatusChip, TierBadge, VERDICT } from "@/components/Badges";
 import { Masthead } from "@/components/Masthead";
 import { Sparkline } from "@/components/Sparkline";
 import { categoryLabel, cleanSubject, keptLine, relTime, shortName } from "@/lib/format";
@@ -19,62 +19,94 @@ export default async function CompanyHub({ params }: { params: Promise<{ symbol:
   const routine = filings.length - material.length;
   const r = rs.research;
   const top = rs.promises.slice(0, 3);
+  const weight = weights.get(c.id);
   return (
     <>
       <AskScopeSetter scope={{ screen: "company", symbol: c.nse_symbol, companyId: c.id }} />
       <Masthead title={shortName(c.name)} back={{ href: "/portfolio", label: "Portfolio" }} />
-      <section className="flex items-baseline justify-between pt-5">
-        <div>
-          <p className="text-xs text-muted">
-            {c.nse_symbol}
-            {c.sector ? ` · ${c.sector}` : ""}
-            {weights.get(c.id) ? ` · ${weights.get(c.id)}% of portfolio` : ""}
-          </p>
-          {m && <p className="mt-1 font-serif text-2xl tabular-nums">₹{m.close.toLocaleString("en-IN")}</p>}
+
+      {/* Meta + current price in one row, matching the shared header pattern */}
+      <section className="flex items-start justify-between gap-3 pt-5">
+        <div className="flex items-center gap-3">
+          <Avatar symbol={c.nse_symbol} name={c.name} size={40} />
+          <div>
+            <p className="text-[11px] text-muted">
+              <span className="font-medium text-ink">{c.nse_symbol}</span>
+              {c.sector ? <> · {c.sector}</> : null}
+              {weight ? <> · {weight}% of portfolio</> : null}
+            </p>
+            {m && (
+              <p className="mt-1 flex items-baseline gap-2">
+                <span className="font-serif text-[26px] leading-none tabular-nums text-ink">
+                  ₹{m.close.toLocaleString("en-IN")}
+                </span>
+                <Move v={m.move} />
+              </p>
+            )}
+          </div>
         </div>
-        {m && (
-          <div className="text-right text-sm">
-            <Move v={m.move} className="block" />
-            {m.volMult && <span className="text-xs tabular-nums text-muted">{m.volMult.toFixed(1)}× volume</span>}
+        {m?.volMult && (
+          <div className="text-right text-[11px] tabular-nums text-muted">
+            <span className="block">{m.volMult.toFixed(1)}× volume</span>
+            <span className="block text-faint">20-day avg</span>
           </div>
         )}
       </section>
-      {m && <div className="mt-3"><Sparkline points={m.series.slice(-30)} /></div>}
 
-      <section className="mt-6">
-        <h2 className="mb-1 font-serif text-[17px] tracking-[-0.01em] text-ink">Recent filings</h2>
+      {m && (
+        <div className="mt-3">
+          <Sparkline points={m.series.slice(-30)} />
+        </div>
+      )}
+
+      <section className="mt-7">
+        <h2 className="mb-2 flex items-baseline gap-2 font-serif text-[20px] tracking-[-0.01em] text-ink">
+          Recent filings <span className="font-sans text-[12px] font-medium tabular-nums text-muted">{material.length}</span>
+        </h2>
         <ul className="divide-y divide-line">
           {material.slice(0, 12).map((f) => (
-            <li key={f.id} className="py-3">
-              <div className="flex items-center justify-between text-xs text-muted">
-                <span>
-                  {categoryLabel(f.finn_category)} · {relTime(f.filed_at)}
+            <li key={f.id} className="py-3.5">
+              <div className="flex items-center justify-between gap-2 text-[11px] text-muted">
+                <span className="truncate">
+                  <span className="font-medium text-ink">{categoryLabel(f.finn_category)}</span>
+                  <span className="mx-1.5 text-faint">·</span>
+                  {relTime(f.filed_at)}
                 </span>
                 <TierBadge tier={f.tier} />
               </div>
-              <p className="mt-1 text-sm">{f.enrichment?.one_line || cleanSubject(f.headline && f.headline.length > 12 ? f.headline : f.subject)}</p>
+              <p className="mt-1.5 line-clamp-2 text-[14px] leading-snug text-ink">
+                {f.enrichment?.one_line || cleanSubject(f.headline && f.headline.length > 12 ? f.headline : f.subject)}
+              </p>
               {f.pdf_url && (
-                <a href={f.pdf_url} target="_blank" rel="noreferrer" className="text-xs text-muted underline decoration-line underline-offset-2">
-                  Filing
+                <a
+                  href={f.pdf_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-brand hover:underline"
+                >
+                  View filing →
                 </a>
               )}
             </li>
           ))}
           {material.length === 0 && <li className="py-3 text-sm text-muted">No material filings in our records.</li>}
         </ul>
-        {routine > 0 && <p className="mt-1 text-xs text-muted">{routine} routine filings not shown.</p>}
+        {routine > 0 && <p className="mt-2 text-[11px] text-muted">{routine} routine filings not shown.</p>}
       </section>
 
-      <section className="mt-8 rounded-lg border border-line p-4">
-        <h2 className="font-serif text-[17px] tracking-[-0.01em] text-ink">Promised vs delivered</h2>
+      <section className="card mt-8 p-5">
+        <h2 className="font-serif text-[20px] tracking-[-0.01em] text-ink">Promised vs delivered</h2>
         {r?.status === "ready" && r.scorecard ? (
           <>
-            <p className="mt-2 font-serif text-xl">{keptLine(r.scorecard).head}</p>
-            <ul className="mt-2 space-y-1 text-sm">
+            <p className="mt-2 font-serif text-[22px] leading-snug text-ink">{keptLine(r.scorecard).head}</p>
+            <div className="mt-3">
+              <SegmentedBar scorecard={r.scorecard} compact showLegend={false} />
+            </div>
+            <ul className="mt-4 space-y-2">
               {top.map((p) => (
-                <li key={p.id} className="flex gap-2">
-                  <span className={`w-24 shrink-0 text-xs ${VERDICT[p.verdict].color}`}>{VERDICT[p.verdict].label}</span>
-                  <span className="min-w-0 truncate">{p.topic}</span>
+                <li key={p.id} className="flex items-center gap-2">
+                  <StatusChip verdict={p.verdict} />
+                  <span className={`min-w-0 truncate text-[13px] ${VERDICT[p.verdict].color}`}>{p.topic}</span>
                 </li>
               ))}
             </ul>
@@ -84,8 +116,11 @@ export default async function CompanyHub({ params }: { params: Promise<{ symbol:
         ) : (
           <p className="mt-2 text-sm text-muted">Not researched yet.</p>
         )}
-        <Link href={`/research/${c.nse_symbol}`} className="mt-3 inline-block text-sm font-medium">
-          {r?.status === "ready" ? "Open research →" : "Research this company →"}
+        <Link
+          href={`/research/${c.nse_symbol}`}
+          className="mt-4 inline-flex items-center gap-1 text-[13px] font-medium text-brand hover:underline"
+        >
+          {r?.status === "ready" ? "Open research" : "Research this company"} →
         </Link>
       </section>
     </>
