@@ -15,6 +15,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from typing import Literal
 
@@ -207,28 +208,46 @@ def _run(db: Db, gw: Gateway, progress: Progress, symbol: str, force: bool) -> d
         return {"company_id": cid, "transcripts": 0}
 
     periods = [p for p, _ in transcripts]
-    # 2-4. read, extract, verify
-    items: list[dict] = []
-    docs: dict[str, dict] = {}
-    dropped = 0
-    for period, url in transcripts:
-        progress(f"Reading {period} transcript")
+
+    # 2-4. read, extract, verify. Transcripts are independent, so read and extract
+    # them a few at a time (httpx clients are thread-safe). Results are merged back
+    # in transcript order afterwards so the m-ids and ordering stay deterministic.
+    def _process(period: str, url: str) -> tuple[str, dict, list, int]:
         data = get_cached(url, kind="pdf")
         pages = pages_text(data)
         doc_id = store_document(db, gw, cid, period, url, pages, data)
-        docs[period] = {"id": doc_id, "pages": pages, "url": url}
         out = gw.structured(step="research.promises", tier="cheap", prompt="promises", schema=Commitments,
                             values={"company": page.name, "period": period, "transcript": with_page_markers(pages)})
-        kept = 0
+        verified: list = []
+        dropped_local = 0
         for c in out.items:
             ok, found = quote_on_page(c.quote, pages, c.page)
             nums_ok = all(number_in_text(v, c.quote) for v in (c.target_low, c.target_high) if v is not None)
             if not ok or not nums_ok:
-                dropped += 1
+                dropped_local += 1
                 continue
-            kept += 1
-            items.append({"id": f"m{len(items) + 1}", "period": period, "doc_id": doc_id, "page": found, **c.model_dump()})
-        progress(f"{period}: {kept} commitments verified, {len(out.items) - kept} dropped")
+            verified.append((c, found))
+        return period, {"id": doc_id, "pages": pages, "url": url}, verified, dropped_local
+
+    progress(f"Reading {len(transcripts)} transcripts")
+    results: dict[str, tuple[dict, list, int]] = {}
+    with ThreadPoolExecutor(max_workers=3) as ex:
+        futs = [ex.submit(_process, p, u) for p, u in transcripts]
+        for fut in as_completed(futs):
+            period, docinfo, verified, dropped_local = fut.result()
+            results[period] = (docinfo, verified, dropped_local)
+            progress(f"{period}: {len(verified)} commitments verified, {dropped_local} dropped")
+
+    # Merge in transcript order so ids are stable regardless of completion order.
+    items: list[dict] = []
+    docs: dict[str, dict] = {}
+    dropped = 0
+    for period, _ in transcripts:
+        docinfo, verified, dropped_local = results[period]
+        docs[period] = docinfo
+        dropped += dropped_local
+        for c, found in verified:
+            items.append({"id": f"m{len(items) + 1}", "period": period, "doc_id": docinfo["id"], "page": found, **c.model_dump()})
 
     if not items:
         db.delete("promises", {"company_id": f"eq.{cid}"})

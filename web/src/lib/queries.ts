@@ -1,5 +1,12 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { db } from "./db";
+
+// Feed reads are cached briefly so switching the Today window (24h/7d/30d) and
+// hopping between tabs reuses results instead of re-querying Postgres every nav.
+// Data changes on a 15-min ingest cron, so a short TTL is invisible to the user.
+// marketState returns a Map (not JSON-serialisable) so it is intentionally not cached.
+const FEED_TTL = 45;
 import type { Company, Doc, Filing, Holding, Item, PromiseRow, Research, Signal, Tier, Triggers } from "./types";
 
 const FILING_COLS =
@@ -102,7 +109,7 @@ export async function marketState(companyIds: number[]): Promise<Map<number, { c
   return out;
 }
 
-export async function itemsInWindow(hours: number, range?: { from: string; to: string }): Promise<{ items: Item[]; failed: boolean }> {
+async function itemsInWindowRaw(hours: number, range?: { from: string; to: string }): Promise<{ items: Item[]; failed: boolean }> {
   try {
     // Custom ranges are whole IST days, inclusive.
     const since = range ? new Date(`${range.from}T00:00:00+05:30`).toISOString() : new Date(Date.now() - hours * 3600e3).toISOString();
@@ -186,7 +193,7 @@ function rank(i: Item) {
   return TIER_ORDER[i.tier] * 10;
 }
 
-export async function upcoming(limit = 6): Promise<{ company: Company; date: string; kind: string }[]> {
+async function upcomingRaw(limit = 6): Promise<{ company: Company; date: string; kind: string }[]> {
   const today = new Date().toISOString().slice(0, 10);
   const [{ companies }, { data }] = await Promise.all([
     portfolio(),
@@ -198,7 +205,7 @@ export async function upcoming(limit = 6): Promise<{ company: Company; date: str
     .map((e) => ({ company: companies.get(e.company_id)!, date: e.date, kind: e.kind }));
 }
 
-export async function holdings(): Promise<Holding[]> {
+async function holdingsRaw(): Promise<Holding[]> {
   const { companies, weights } = await portfolio();
   const ids = [...weights.keys()];
   const since = new Date(Date.now() - 7 * 864e5).toISOString();
@@ -242,7 +249,7 @@ export async function research(companyId: number): Promise<{ research: Research 
   return { research: (r as Research) ?? null, promises: (ps ?? []) as PromiseRow[], docs: (docs ?? []) as Doc[] };
 }
 
-export async function researchedCompanies(): Promise<{ company: Company; research: Research }[]> {
+async function researchedCompaniesRaw(): Promise<{ company: Company; research: Research }[]> {
   const { data } = await db().from("research").select("*, company:companies(id,nse_symbol,bse_code,name,sector)").order("updated_at", { ascending: false });
   return (data ?? []).filter((r) => r.company).map((r) => ({ company: r.company as Company, research: r as Research }));
 }
@@ -251,3 +258,31 @@ export async function filingById(id: string): Promise<Filing | null> {
   const { data } = await db().from("filings").select(FILING_COLS).eq("id", id).maybeSingle();
   return (data as Filing) ?? null;
 }
+
+// Cached feed reads (see FEED_TTL note at top). Arguments are part of the cache
+// key, so each window / id-set is cached separately.
+export const itemsInWindow = unstable_cache(itemsInWindowRaw, ["itemsInWindow"], { revalidate: FEED_TTL });
+export const upcoming = unstable_cache(upcomingRaw, ["upcoming"], { revalidate: FEED_TTL });
+export const holdings = unstable_cache(holdingsRaw, ["holdings"], { revalidate: FEED_TTL });
+export const researchedCompanies = unstable_cache(researchedCompaniesRaw, ["researchedCompanies"], { revalidate: FEED_TTL });
+
+// The Today page's per-company "how often does this filing happen" scan (up to
+// 5000 rows) was the heaviest part of every window switch. Cache it too.
+export const categoryHistory = unstable_cache(
+  async (ids: number[]): Promise<{ counts: Record<string, number>; since: string | null }> => {
+    if (!ids.length) return { counts: {}, since: null };
+    const { data } = await db()
+      .from("filings")
+      .select("company_id,finn_category,filed_at")
+      .in("company_id", ids)
+      .neq("tier", "routine")
+      .order("filed_at", { ascending: true })
+      .limit(5000);
+    const rows = (data ?? []) as { company_id: number; finn_category: string; filed_at: string }[];
+    const counts: Record<string, number> = {};
+    for (const h of rows) counts[`${h.company_id}:${h.finn_category}`] = (counts[`${h.company_id}:${h.finn_category}`] ?? 0) + 1;
+    return { counts, since: rows[0]?.filed_at ?? null };
+  },
+  ["categoryHistory"],
+  { revalidate: FEED_TTL },
+);
