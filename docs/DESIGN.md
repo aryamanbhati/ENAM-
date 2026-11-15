@@ -14,6 +14,20 @@ Investors drown in prices, filings, announcements and results, and most of it do
 4. **Respect attention.** Few interruptions, short finished sessions, no gamification.
 5. **Depth over breadth.** One hero analysis done properly beats eight shallow ones.
 
+## 2.5 What shipped vs this plan (honest reconciliation)
+
+This document is the design intent, written up front. A few things changed during the build; the reasoning is in the decisions log and the audits. The deltas worth flagging:
+
+- **Default window is 7d, not 24h.** On a daily-habit product the morning catch-up is usually "the last few days," and 7d makes a better first impression; 24h is one tap away.
+- **One typeface, not a serif/sans mix.** The editorial serif read as "designer-y" against financial data, so the UI is a single clean sans (Geist) with tabular numerals. Colour still only ever carries meaning.
+- **Light theme only**, on an off-white + ink + two-pastel palette with a reserved coral for the one primary action. The earlier cream/navy look was simplified for contrast and calm; every text/background pair clears WCAG AA.
+- **The assistant runs on Groq** (Llama / gpt-oss) with Gemini as fallback. Ingestion and research stay on Gemini's free tier. Rationale: an all-day product has to feel instant, and sub-second inference is the reasoning that matters for the interactive path.
+- **"Listen to my briefing" uses OpenAI tts-1-hd** for a natural voice, with the browser's speech engine as a zero-cost fallback. Voice input still uses the browser API.
+- **Custom date range shipped** in the window picker.
+- **A code-only "The numbers" panel** was added to the research page (8-quarter revenue / net-profit / operating-margin trajectory and director turnover), alongside the promised-vs-delivered hero.
+
+See `docs/ARCHITECTURE_AUDIT.md` and `docs/UX_AUDIT.md` for the engineering and design reviews that drove the late changes.
+
 ## 3. What already exists (and how we differ)
 
 - **Trendlyne** sends alerts for all corporate filings on a watchlist: aggregation, the problem itself.
@@ -36,7 +50,7 @@ So filtered announcements and AI results summaries are table stakes. FINN differ
 ### 5.1 Push: the Today screen (windowed digest)
 
 - **Summary line** at the top: "2 things need you. 31 routine filings hidden."
-- **Window picker:** 24h (default), 7d, 30d, custom. Changing it re-filters the same tiers and counts.
+- **Window picker:** 7d (default), 24h, 30d, custom. Changing it re-filters the same tiers and counts.
 - **Three tiers**, covering every filing in the window (nothing deleted, routine only collapsed):
 
 | Tier | What lands there | Shown as |
@@ -253,7 +267,7 @@ The LLM writes into `facts` and `promises` only through verification. Everything
 | Assistant final answer | Strong |
 | Price/volume maths, numeric verdicts | No model (code) |
 
-**Providers and keys: not decided. Ask the user when first needed.** Configure via `FINN_MODEL_CHEAP`, `FINN_MODEL_STRONG`, `FINN_EMBED_MODEL`.
+**Providers (decided):** ingestion and research on Gemini's free tier; the interactive assistant on Groq (Llama / gpt-oss) with Gemini as fallback, for sub-second answers. Configure via `FINN_MODEL_CHEAP`, `FINN_MODEL_STRONG`, `FINN_EMBED_MODEL` (and `GROQ_API_KEY` for the web assistant). Model names are never hardcoded.
 
 Retrieval: hybrid search (Postgres full-text + pgvector), same embedding model at index and query time.
 
