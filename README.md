@@ -127,6 +127,8 @@ The web app requires its local environment configuration, including the Supabase
 - [Architecture, performance and reliability audit](docs/ARCHITECTURE_AUDIT.md)
 - [UX and product design audit](docs/UX_AUDIT.md)
 - [Project handoff](docs/HANDOFF.md)
+- [Audit methodology — how I used AI to review the product and architecture](docs/AUDIT_METHODOLOGY.md)
+- [Audit index and reusable review briefs](docs/audits/README.md)
 
 ## Evaluation and limitations
 

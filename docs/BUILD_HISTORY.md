@@ -102,7 +102,19 @@ I used rules before models wherever possible. The worker uses Gemini for ingesti
 
 I added content-based caching for source material, model calls and research runs. The evaluation records a 24% model-call cache hit rate. The exact benefit depends on whether the source documents have changed.
 
-## 9. What I learned about using AI in a real build
+## 9. Using AI as a product and systems auditor
+
+I also used AI for two structured audits, separate from code generation.
+
+For the **UX audit**, I asked it to work as a principal product designer, UX researcher, product manager and frontend QA engineer. The brief required a review of the deployed application, real user journeys, mobile behaviour, accessibility and information hierarchy, with findings ranked by user impact. The goal was to test whether the interface fulfilled FINN's promise of reducing noise, not simply whether it looked polished.
+
+For the **systems audit**, I asked it to work as a founding CTO and principal systems architect. The brief required inspection of the actual Next.js application, Python worker, Supabase migrations, GitHub Actions workflows and AI integrations. It challenged the current architecture, traced user-facing and background-processing journeys, examined failure and security scenarios, and compared incremental optimisation with future scaling options. It explicitly prohibited invented performance figures, destructive tests and premature infrastructure changes.
+
+The two reviews had different evidence standards: the UX audit focused on the live browser experience, while the systems audit focused on repository implementation and operational design. I treated their outputs as hypotheses and engineering inputs to validate, not as unquestionable answers. I reviewed findings, distinguished reproduced issues from unmeasured risks, and decided what to fix, defer or leave alone.
+
+See [AUDIT_METHODOLOGY.md](AUDIT_METHODOLOGY.md) for the process and limitations, [UX_AUDIT.md](UX_AUDIT.md) and [ARCHITECTURE_AUDIT.md](ARCHITECTURE_AUDIT.md) for the reports, and [audits/](audits/) for reusable review briefs.
+
+## 10. What I learned about using AI in a real build
 
 The tools made it possible to move quickly across frontend, backend, data pipelines and design review. But speed only helped when I kept ownership of the decisions.
 
