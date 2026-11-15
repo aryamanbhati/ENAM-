@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AskScopeSetter } from "@/components/Ask";
-import { Avatar, CountChip, MovePill } from "@/components/Badges";
+import { Avatar, MovePill } from "@/components/Badges";
 import { Masthead } from "@/components/Masthead";
 import { MiniSpark } from "@/components/Sparkline";
 import { shortName } from "@/lib/format";
@@ -69,13 +69,16 @@ export default async function Portfolio() {
               <Avatar symbol={r.nse_symbol} name={r.name} size={40} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[13.5px] font-semibold">{shortName(r.name)}</span>
-                <span className="mt-1 flex items-center gap-1.5 text-[11px] text-muted">
-                  <span className="tabular-nums">{r.weight}%</span>
+                <span className="mt-1 flex items-center gap-1 text-[11px]">
+                  <span className="tabular-nums text-muted">{r.weight}%</span>
+                  <span className="text-faint">·</span>
                   {r.needs > 0 ? (
-                    <CountChip n={r.needs} label={r.needs === 1 ? "needs you" : "need you"} />
+                    <span className="font-medium text-accent-ink">{r.needs} need{r.needs === 1 ? "s" : ""} you</span>
                   ) : r.worth > 0 ? (
-                    <CountChip n={r.worth} label="worth knowing" tone="muted" />
-                  ) : null}
+                    <span className="text-muted">{r.worth} worth knowing</span>
+                  ) : (
+                    <span className="text-faint">up to date</span>
+                  )}
                 </span>
               </span>
               <span className="hidden w-[56px] shrink-0 sm:block">

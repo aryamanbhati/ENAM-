@@ -12,8 +12,8 @@ function summary(scorecard: Record<string, number> | null | undefined): { line: 
   const g = (k: string) => scorecard?.[k] ?? 0;
   const total = g("total");
   const judged = g("delivered") + g("partly") + g("missed");
-  if (!total) return { line: "No explicit guidance", muted: true };
-  if (judged === 0) return { line: `${total} tracked, none judged yet`, muted: true };
+  if (!total) return { line: "No guidance", muted: true };
+  if (judged === 0) return { line: `${total} tracked`, muted: true };
   return { line: `${g("delivered")} of ${judged} kept`, muted: false };
 }
 
@@ -51,26 +51,26 @@ export default async function ResearchIndex() {
                   </span>
                   <span className="block text-[11px] text-muted">{company.nse_symbol}</span>
                 </span>
-                <span className="w-[140px] shrink-0 text-right">
+                <span className="flex w-[128px] shrink-0 flex-col items-stretch gap-1.5">
                   {r.status === "ready" && s ? (
                     <>
-                      <span
-                        className={`block text-[12px] font-medium tabular-nums ${info.muted ? "text-muted" : "text-ink"}`}
-                      >
+                      <span className={`text-right text-[12px] font-semibold tabular-nums ${info.muted ? "text-muted" : "text-ink"}`}>
                         {info.line}
                       </span>
-                      <span className="mt-1.5 block">
-                        <SegmentedBar scorecard={s} compact showLegend={false} />
-                      </span>
+                      <SegmentedBar scorecard={s} compact showLegend={false} />
+                    </>
+                  ) : r.status === "running" ? (
+                    <>
+                      <span className="text-right text-[12px] text-muted">Reading…</span>
+                      <span className="sk h-1.5 w-full rounded-full" />
                     </>
                   ) : r.status === "no_guidance" ? (
-                    <span className="text-[12px] text-muted">No explicit guidance</span>
-                  ) : r.status === "running" ? (
-                    <span className="inline-flex items-center gap-1 text-[12px] text-muted">
-                      <span className="sk inline-block h-2 w-16" />
-                    </span>
+                    <>
+                      <span className="text-right text-[12px] text-muted">No guidance</span>
+                      <span className="h-1.5 w-full rounded-full bg-line" />
+                    </>
                   ) : (
-                    <span className="text-[12px] text-muted">{r.status}</span>
+                    <span className="text-right text-[12px] capitalize text-muted">{r.status}</span>
                   )}
                 </span>
               </Link>
