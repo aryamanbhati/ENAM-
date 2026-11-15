@@ -1,42 +1,39 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
 
-/*
-  FINN design tokens. Palette C: soft off-white, ink, two pastels (lavender + peach)
-  plus a reserved coral for the one CTA. Up/down keep their green/red meaning.
-  One font family: Geist. All numbers tabular.
-*/
+/* FINN visual system: warm paper, obsidian surfaces, amber attention, mint gains and coral losses. */
 :root {
   /* colour */
-  --bg: #f7f5f2;
-  --surface: #ffffff;
-  --raised: #f0ede8;
-  --ink: #101420;
-  --ink-2: #1c2235;
-  --muted: #4b5261;
-  --faint: #5f6678;
-  --line: #e5e1d8;
+  --bg: #f7f5f0;
+  --surface: #faf8f4;
+  --raised: #edeae2;
+  --ink: #0e1117;
+  --ink-2: #151b27;
+  --muted: #57534e;
+  --faint: #78716c;
+  --line: #e5e0d8;
 
-  --brand: #101420;
-  --brand-2: #1c2235;
-  --brand-soft: #e7e4df;
+  --brand: #0e1117;
+  --brand-2: #151b27;
+  --brand-soft: #edeae2;
 
   /* reserved coral: used only on the primary CTA + the hero count */
-  --accent: #ff6b4a;
-  --accent-ink: #b63d1f;
-  --accent-soft: #ffe3db;
+  --accent: #fbbf24;
+  --accent-ink: #92400e;
+  --accent-soft: #fef3c7;
 
   /* pastels: tinted surfaces for tiles and status blocks */
-  --pastel-a: #ece4f7;
-  --pastel-a-ink: #4a3b7a;
-  --pastel-b: #ffe4d6;
-  --pastel-b-ink: #8a3d1b;
+  --pastel-a: #e8e4dc;
+  --pastel-a-ink: #57534e;
+  --pastel-b: #f3e8d7;
+  --pastel-b-ink: #854d0e;
 
-  --up: #1c7c54;
-  --up-soft: #e3f1e8;
-  --down: #c8372d;
-  --down-soft: #fbe0dd;
-  --partial: #b26b00;
-  --partial-soft: #f8ead0;
+  --up: #15803d;
+  --up-soft: #dcfce7;
+  --down: #dc2626;
+  --down-soft: #fee2e2;
+  --partial: #b45309;
+  --partial-soft: #fef3c7;
   --early: #6b6f80;
   --early-soft: #ebeaea;
 
@@ -60,7 +57,7 @@
   /* shadow */
   --shadow-soft: 0 1px 2px rgb(16 20 32 / 0.04), 0 10px 28px -18px rgb(16 20 32 / 0.18);
   --shadow-low: 0 8px 24px -10px rgb(16 20 32 / 0.25), 0 0 0 1px rgb(16 20 32 / 0.04);
-  --shadow-bot: 0 12px 28px -8px rgb(255 107 74 / 0.5), 0 2px 4px rgb(16 20 32 / 0.08);
+  --shadow-bot: 0 12px 28px -8px rgb(217 119 6 / 0.35), 0 2px 4px rgb(16 20 32 / 0.08);
   --card-shadow: var(--shadow-soft);
   --dock-shadow: var(--shadow-low);
 
@@ -118,6 +115,10 @@
   --color-partial-soft: var(--partial-soft);
   --color-early: var(--early);
   --color-early-soft: var(--early-soft);
+  --color-mint: #34d399;
+  --color-mint-soft: #d1fae5;
+  --color-coral: #f87171;
+  --color-amber: #fbbf24;
   --font-sans: var(--font-geist);
 }
 
@@ -167,13 +168,13 @@ h1, h2, h3 { letter-spacing: -0.015em; }
   -webkit-backdrop-filter: saturate(160%) blur(14px);
 }
 
-/* Today hero: ink field with coral count. */
+/* Today and portfolio heroes use the FINN obsidian surface. */
 .hero {
   position: relative;
   overflow: hidden;
   border-radius: var(--r-xl);
   color: #f6f0e4;
-  background: var(--brand);
+  background: linear-gradient(160deg, #161c29 0%, #0e1117 58%, #0a0d12 100%);
   padding: 28px 24px;
   box-shadow: 0 18px 40px -24px rgb(16 20 32 / 0.5);
 }
@@ -198,13 +199,13 @@ h1, h2, h3 { letter-spacing: -0.015em; }
   justify-content: center;
   gap: 8px;
   background: var(--accent);
-  color: #ffffff;
+  color: #0e1117;
   border-radius: 999px;
   padding: 12px 20px;
   font-size: var(--t-14);
   font-weight: 600;
   min-height: 44px;
-  box-shadow: 0 1px 2px rgb(182 61 31 / 0.3), 0 10px 20px -10px rgb(182 61 31 / 0.55);
+  box-shadow: 0 1px 2px rgb(146 64 14 / 0.22), 0 10px 20px -10px rgb(146 64 14 / 0.38);
   transition: transform var(--d-fast) var(--e-std), filter var(--d-fast) var(--e-std);
 }
 .btn-accent:active { transform: scale(0.98); filter: brightness(0.95); }
@@ -363,3 +364,25 @@ input[type="range"] { accent-color: var(--accent); }
   animation: bar-sheen 1.5s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) { .bar-sheen { animation: none; } }
+
+
+/* FINN redesign refinements */
+.font-display { font-family: "Plus Jakarta Sans", var(--font-geist), system-ui, sans-serif; }
+.portfolio-hero {
+  border: 1px solid rgb(255 255 255 / 0.07);
+  border-radius: 26px;
+  background: linear-gradient(160deg, #161c29 0%, #0e1117 55%, #0a0d12 100%);
+  box-shadow: 0 20px 38px -12px rgb(14 17 23 / 0.36), inset 0 1px 0 rgb(255 255 255 / 0.1);
+}
+.text-mint { color: #34d399; }
+.text-coral { color: #f87171; }
+.text-amber { color: #fbbf24; }
+.text-amber-ink { color: #92400e; }
+@media (min-width: 768px) {
+  body {
+    background:
+      radial-gradient(#d5cfc5 1px, transparent 1px),
+      #eae6df;
+    background-size: 20px 20px;
+  }
+}
