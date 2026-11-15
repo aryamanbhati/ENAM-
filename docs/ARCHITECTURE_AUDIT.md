@@ -1,6 +1,8 @@
 # FINN — Systems Architecture, Performance & Reliability Audit
 
-Prepared as founding-CTO review. Grounded in the actual source at the commit audited (`main`), not the intended design. Every claim cites a file. Where a number would require production telemetry it is marked **[needs instrumentation]** rather than invented.
+**How to read this document:** this is a code-level audit snapshot, not a claim that every recommendation is still open or that every latency figure is a production SLO. It records the implementation and evidence inspected at the time of review. Items subsequently fixed should be checked against the current source before being treated as active defects. Measured values are labelled as measured; estimates and instrumentation gaps are called out explicitly.
+
+The audit is grounded in the source at the reviewed `main` commit. Where a number would require production telemetry it is marked **[needs instrumentation]** rather than invented. The goal is to make the system's current strengths, limits and next scaling decisions legible.
 
 Scope reviewed: `web/` (App Router, API routes, assistant), `worker/finn_worker/` (pipelines, llm gateway, sources, verify), `supabase/migrations/`, `.github/workflows/`, `docs/DESIGN.md`, `CLAUDE.md`.
 
