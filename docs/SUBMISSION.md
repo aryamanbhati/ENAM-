@@ -13,35 +13,78 @@ Everything needed to submit to ENAM, in one place.
 
 Hi,
 
-Please find my submission for the AI Engineer build challenge below.
+My submission for the AI Engineer build challenge is below. Links first, then the thinking.
 
-**FINN — a mobile-first financial investment agent.** It filters an investor's portfolio news down to the few things that actually need them, and on demand it analyses what a company's management promised against what they delivered.
-
-- **Live app (try on a phone, add to home screen):** https://enam-six.vercel.app
+- **Live app (open on a phone, add to home screen for notifications):** https://enam-six.vercel.app
 - **Repository:** https://github.com/aryamanbhati/ENAM-
-- **AI build history:** attached — `FINN-ai-build-history.zip` (two Claude Code session transcripts), plus the claude.ai product-design chat [share link here]
+- **AI build history:** `FINN-ai-build-history.zip` [Drive link] (two Claude Code sessions + an index), plus the claude.ai product-design chat [share link]
 
-**What I built**
+**The bet I made**
 
-- **Push — the Today feed.** Every filing and market move across a 15-company portfolio, tiered into *Needs you / Worth knowing / Routine* for a window I pick (24h, 7d default, 30d, custom). Routine is collapsed, not deleted. "Needs you" is driven only by my own configurable alerts (announcement types, a price-move %, a volume multiple) and is the only thing that notifies me. Results filings show Revenue/EBITDA/PBT/PAT QoQ and YoY; management changes pull the incoming person's bio from the filing itself; price/volume moves are matched to the filing that explains them.
-- **Pull — promised vs delivered.** For any NSE ticker, FINN reads the last ~6 concall transcripts and quarterly results and tracks every explicit commitment quarter by quarter, with quotes and page references. It computes the verdict in code and flags *quietly dropped* guidance — a target stated once and never mentioned again. Alongside it, a code-only numbers panel: 8-quarter revenue, net-profit and operating-margin trajectory, and director turnover.
-- **Assistant.** A floating agent on every screen, scoped to what's on screen. A router picks ≤3 narrow specialists, a composer writes only from their outputs, and a verifier deletes any sentence without a valid source. "How I answered this" shows the agents, sources, tokens and cost.
+The brief says the scarce skill is not aggregating information, it is filtering it. I took that one step further: for an investment firm, the scarce skill is *filtering you can trust*. A feed that is 95% right is worse than no feed, because you stop believing any of it and go back to reading filings yourself. So I did not build a prettier news reader. I built FINN around a single question the investor asks every morning, "does anything actually need me," and I spent most of the effort making every answer on the screen provable from a primary document. The product is the filtering; the architecture is the proof.
 
-**Key decisions & trade-offs**
+**What it does**
 
-- **The model never produces a number.** Every figure is extracted from a document, verified against the cited page, and all arithmetic (QoQ/YoY/margins/verdicts) is done in code. Quotes that don't match their page are dropped before anyone sees them.
-- **Fail upward.** Uncertain classifications are shown, never hidden — the one error the product can't afford is burying something material.
-- **Depth over breadth.** One pull analysis done rigorously beats eight shallow sections.
-- **Right tool per step, cheaply.** Rules before models; a cheap model for bulk extraction; a stronger model only for judgement; Groq for the interactive assistant because the product has to feel instant; caching everywhere. Ingestion runs on free tiers.
-- **No servers.** Next.js on Vercel, Python workers on GitHub Actions, Supabase for Postgres + pgvector + live progress.
+*Push (it tells you).* The Today feed takes every filing and end-of-day move across a 15-company portfolio and sorts it into **Needs you / Worth knowing / Routine** for whatever window you pick (24h, 7d, 30d, custom). Routine collapses to one line, it is never deleted. "Needs you" is driven only by *your* configurable alerts (announcement types, a price-move %, a volume multiple), and it is the only thing allowed to notify you. One detail I am proud of: the hero count stays the last-24h urgent number even on a 30-day window, so widening the window never turns the triage promise into a 104-item wall. Results filings arrive with Revenue / EBITDA / PBT / PAT, QoQ and YoY. A management change arrives with the incoming person's bio pulled from the filing itself. A price spike arrives already joined to the filing that explains it, or labelled "no filing explains this move."
 
-**What I left out:** bull/bear, balance-sheet and cash-quality sections; news and broker notes (pull side is primary sources only); auth/multi-user; a native app (installable PWA instead).
+*Pull (you ask it).* For **any** NSE ticker, not just my demo set, FINN reads the last ~6 concall transcripts plus quarterly results and answers the question the brief said it values most: what did management promise, and did they deliver? Every explicit commitment becomes a card with a quarter-by-quarter timeline of quotes and page references, a verdict computed in code, and the signal I think is genuinely differentiated, **quietly dropped**: a target stated once and then never mentioned again. That is the difference between summarising management and analysing them. Example from live data: KPIT guided 30% FY27 revenue growth, is tracking 7.6% after two quarters, and stopped bringing it up.
 
-**Where I'd take it next:** read annual reports as well as transcripts so capex/debt/segment promises can be measured; guidance-aware results alerts ("beat the revenue guide by 3 points") the moment results land; per-user portfolios tuned from what I open and ignore.
+*Assistant.* A floating agent on every screen, scoped to what is on screen. It is a small multi-agent loop (router → ≤3 narrow specialists → composer → verifier), and "How I answered this" exposes the agents, sources, tokens and cost on every answer. On the research page it is walled to that company's own primary documents and nothing else.
 
-Full write-up and architecture are in the repo (`docs/WRITEUP.md`, `docs/DESIGN.md`).
+**The architecture, and why it is shaped this way**
 
-Thanks for reviewing,
+```
+Browser (Next.js PWA) ──┬─ RSC feed render ─────────────► Supabase Postgres
+                        ├─ /api/ask (multi-agent) ──────► (service role, server-only)
+                        └─ /api/research (dispatch) ──► GitHub REST
+                                                          │
+         GitHub Actions workers ◄──── jobs table = queue ┘
+         filings · eod · research (Python CLI, cron + dispatch)
+                 │  Gemini (cheap/strong chain) · rules-first · caches
+                 └──────────────► writes facts/promises/signals back to Postgres
+```
+
+Three deliberate calls:
+
+1. **No servers to babysit.** The entire backend runs as a Python CLI on GitHub Actions: cron for filings and prices, per-ticker concurrency-grouped `workflow_dispatch` for research. The `jobs` table *is* the queue. This gives me idempotent, serialized, retryable background work with zero hosted infrastructure and zero idle cost, which is exactly right at this scale. The repo includes a CTO-level audit (`docs/ARCHITECTURE_AUDIT.md`) that reasons about where this stops being enough and what I would change then, because knowing the ceiling matters as much as the choice.
+2. **Deterministic and probabilistic work are physically separated.** The model classifies, extracts and writes prose. Code does every number and every verdict. They never cross.
+3. **Everything is cached by content.** Source pages and PDFs by content hash, LLM calls by (model + prompt-version + input), research by a hash of the transcript set. 24% of model calls are served from cache; a re-run with unchanged documents does zero work.
+
+**The part I care about most: the guardrails**
+
+This is what separates a finance product from a demo. Six rules, enforced in code, not in a prompt:
+
+- **No number comes from the model.** Figures are extracted from the filing, each one must appear on its cited page, EBITDA is *computed* (PBT + finance costs + D&A) and labelled as computed, PBT − tax is reconciled against PAT, and results are cross-checked against screener. All arithmetic is code.
+- **Every quote is verified against the page it cites** (normalised fuzzy match). If it does not match, it is dropped before anyone sees it. For Dixon, 7 of 28 extracted quotes were dropped this way.
+- **Every assistant sentence must carry a valid source id.** A post-check deletes any sentence that does not, so the model literally cannot speak without a citation.
+- **Classifier uncertainty fails *upward*, in code.** A low-confidence or failed call lands a filing in "Worth knowing," never "Routine." The one error this product cannot afford is silently burying something material, so the code guarantees it never does. (I verified this holds in `tiering.py` / `enrich.py`, not just that the prompt asks for it.)
+- **The pull side is primary sources only.** Transcripts and results filings, no news, no broker notes, no model outside-knowledge. This is enforced by what each agent is allowed to read, not by asking nicely.
+- **"Not in the documents" and "no explicit guidance found" are valid answers.** The scorecard counts only commitments it can actually judge; it never invents a verdict to fill a card.
+
+**Efficiency (free-tier by design)**
+
+Rules handle most filings before any model runs. A cheap model does bulk extraction; a stronger model is reserved for judgement and prose; embeddings do retrieval. Ingestion and research run entirely on Gemini's free tier, so actual spend is zero; at paid list prices the whole build's 285 model calls would cost ~$0.32, and a research run ~$0.04. Every call is logged with model, tokens, latency and cost. The one place I spent latency budget instead of money: the interactive assistant runs on Groq, because a product you reach for all day has to feel instant, and sub-second inference is the reasoning that matters there.
+
+**Honest evaluation** (data and scripts in `eval/`)
+
+| What | Result |
+|---|---|
+| Filing classifier (99 labelled) | 90.9% rules-only, 91.9% with the model; of 8 errors, 7 were routine items shown (safe), 1 was a material item hidden |
+| Results numbers vs screener | 78.6% within 1% before the cross-check, 84% after |
+| Promise quotes verified on-page | 86.5% pass; the rest dropped before display |
+| Cost | $0 actual; ~$0.04 per research run; 24% cache hit rate |
+
+I labelled the eval set myself, so these measure precision and the pipeline, not independent recall. I would rather tell you that than quote a number I cannot stand behind.
+
+**What I deliberately left out:** bull/bear, balance-sheet and cash-quality sections; auth and multi-user; a native app (installable PWA instead). Thin-but-working: one pull analysis done rigorously beats eight shallow ones.
+
+**Where I would take it next:** read annual reports as well as transcripts so capex, debt and segment promises can be *measured* and not only judged; guidance-aware results alerts ("beat the revenue guide by 3 points") the instant results land; per-user portfolios tuned from what you open and ignore.
+
+Fuller detail is in `docs/WRITEUP.md`, `docs/DESIGN.md` and the architecture and UX audits in `docs/`.
+
+Thanks for reading this far, and for a genuinely fun problem.
+
+Best,
 [Your name]
 
 ---
