@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { categoryLabel, cleanSubject, naturalTitle, relTime, shortName, WINDOWS, type WindowKey } from "@/lib/format";
+import { categoryLabel, cleanSubject, naturalTitle, relTime, shortName, type WindowKey } from "@/lib/format";
 import type { Item, Tier } from "@/lib/types";
 import { AskScopeSetter } from "./Ask";
 import { Avatar, CatChip, MovePill, SectionTitle } from "./Badges";
@@ -275,8 +275,8 @@ function WindowPicker({ win, range }: { win: WindowKey | "custom"; range?: { fro
   const [from, setFrom] = useState(range?.from ?? new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10));
   const [to, setTo] = useState(range?.to ?? today);
   const tabs: Array<{ key: WindowKey | "custom"; label: string; href?: string; icon?: boolean }> = [
-    { key: "24h", label: "24h", href: "/" },
-    { key: "7d", label: "7d", href: "/?w=7d" },
+    { key: "24h", label: "24h", href: "/?w=24h" },
+    { key: "7d", label: "7d", href: "/" },
     { key: "30d", label: "30d", href: "/?w=30d" },
     { key: "custom", label: "Custom", icon: true },
   ];

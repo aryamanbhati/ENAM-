@@ -137,6 +137,16 @@ export function cleanSubject(s: string | null | undefined): string {
 export const WINDOWS = { "24h": 24, "7d": 24 * 7, "30d": 24 * 30 } as const;
 export type WindowKey = keyof typeof WINDOWS;
 
+/**
+ * Remove "not measurable" commitments from a scorecard so they do not show in
+ * counts, bars or headlines. FINN only tracks what it can actually judge.
+ */
+export function cleanScorecard(s: Record<string, number> | null | undefined): Record<string, number> {
+  const src = s ?? {};
+  const nm = src.not_measurable ?? 0;
+  return { ...src, not_measurable: 0, total: Math.max((src.total ?? 0) - nm, 0) };
+}
+
 /** Scorecard headline: only promises that can be judged count toward "kept". */
 export function keptLine(s: Record<string, number> | null | undefined): { head: string; sub: string } {
   const g = (k: string) => (s?.[k] ?? 0);

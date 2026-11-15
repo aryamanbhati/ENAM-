@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { cleanQuote, keptLine, num, pct } from "@/lib/format";
+import { cleanQuote, cleanScorecard, keptLine } from "@/lib/format";
 import type { Company, Doc, PromiseRow, Research } from "@/lib/types";
 import { useAsk } from "./Ask";
 import { PageChip, SegmentedBar, StatusChip } from "./Badges";
@@ -8,43 +8,30 @@ import { Chevron } from "./icons";
 
 const MENTION_LABEL: Record<string, string> = { stated: "Stated", reiterated: "Reiterated", raised: "Raised", lowered: "Lowered", silent: "Silent" };
 
-export function ResearchView({ company, research: r, promises, docs }: { company: Company; research: Research; promises: PromiseRow[]; docs: Doc[] }) {
+export function ResearchView({ company, research: r, promises: allPromises, docs }: { company: Company; research: Research; promises: PromiseRow[]; docs: Doc[] }) {
   const { ask } = useAsk();
   const docUrl = new Map(docs.map((d) => [d.id, d.url]));
-  const s = r.scorecard ?? { total: 0 };
+  // Drop "not measurable" commitments entirely: they add noise without a verdict.
+  const promises = allPromises.filter((p) => p.verdict !== "not_measurable");
+  const s = cleanScorecard(r.scorecard);
   const total = s.total ?? 0;
   const snap = r.snapshot;
   const latestDoc = snap?.one_liner ? docUrl.get(snap.one_liner.document_id) : null;
 
   return (
     <div className="space-y-7 pt-5">
-      {/* 1. header + snapshot */}
+      {/* 1. one-line read + provenance. The number grid lives in MetricsPanel now. */}
       <section>
         {snap?.one_liner && (
-          <p className="font-serif text-[17px] leading-relaxed">
+          <p className="text-[16px] leading-relaxed text-ink">
             {snap.one_liner.text}
             <PageChip page={snap.one_liner.page} href={latestDoc} />
           </p>
         )}
-        {snap && (
-          <dl className="mt-4 grid grid-cols-2 gap-2">
-            {snap.numbers.map((n) => (
-              <div key={n.label} className="stat-tile">
-                <dt className="label">{n.label}</dt>
-                <dd className="value">{num(n.value, n.unit)}</dd>
-                {n.yoy !== undefined && n.yoy !== null && (
-                  <dd className={`text-[11px] font-medium tabular-nums ${n.yoy >= 0 ? "text-up" : "text-down"}`}>
-                    {pct(n.yoy)} YoY
-                  </dd>
-                )}
-              </div>
-            ))}
-          </dl>
-        )}
         <p className="mt-3 text-[11px] text-muted">
           From {r.transcripts ?? 0} concall transcripts and {r.results_filings ?? 0} quarters of results ({snap?.basis ?? "consolidated"}), latest {snap?.period}.{" "}
           {snap?.source_url && (
-            <a href={snap.source_url} target="_blank" rel="noreferrer" className="underline decoration-line underline-offset-2">
+            <a href={snap.source_url} target="_blank" rel="noreferrer" className="underline decoration-line underline-offset-2 hover:text-ink">
               Results table
             </a>
           )}

@@ -4,7 +4,7 @@ import { AskScopeSetter } from "@/components/Ask";
 import { Avatar, Move, SegmentedBar, StatusChip, TierBadge, VERDICT } from "@/components/Badges";
 import { Masthead } from "@/components/Masthead";
 import { PriceChart } from "@/components/PriceChart";
-import { categoryLabel, keptLine, naturalTitle, relTime, shortName } from "@/lib/format";
+import { categoryLabel, cleanScorecard, keptLine, naturalTitle, relTime, shortName } from "@/lib/format";
 import { companyBySymbol, companyFilings, marketState, portfolio, research } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,8 @@ export default async function CompanyHub({ params }: { params: Promise<{ symbol:
   const material = filings.filter((f) => f.tier !== "routine");
   const routine = filings.length - material.length;
   const r = rs.research;
-  const top = rs.promises.slice(0, 3);
+  const scorecard = r?.scorecard ? cleanScorecard(r.scorecard) : null;
+  const top = rs.promises.filter((p) => p.verdict !== "not_measurable").slice(0, 3);
   const weight = weights.get(c.id);
   return (
     <>
@@ -96,11 +97,11 @@ export default async function CompanyHub({ params }: { params: Promise<{ symbol:
 
       <section className="card mt-8 p-5">
         <h2 className="font-serif text-[20px] tracking-[-0.01em] text-ink">Promised vs delivered</h2>
-        {r?.status === "ready" && r.scorecard ? (
+        {r?.status === "ready" && scorecard ? (
           <>
-            <p className="mt-2 font-serif text-[22px] leading-snug text-ink">{keptLine(r.scorecard).head}</p>
+            <p className="mt-2 font-serif text-[22px] leading-snug text-ink">{keptLine(scorecard).head}</p>
             <div className="mt-3">
-              <SegmentedBar scorecard={r.scorecard} compact showLegend={false} />
+              <SegmentedBar scorecard={scorecard} compact showLegend={false} />
             </div>
             <ul className="mt-4 space-y-2">
               {top.map((p) => (

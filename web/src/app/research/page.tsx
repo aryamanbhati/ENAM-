@@ -3,7 +3,7 @@ import { AskScopeSetter } from "@/components/Ask";
 import { Avatar, SegmentedBar } from "@/components/Badges";
 import { Masthead } from "@/components/Masthead";
 import { TickerSearch } from "@/components/TickerSearch";
-import { shortName } from "@/lib/format";
+import { cleanScorecard, shortName } from "@/lib/format";
 import { researchedCompanies } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +36,7 @@ export default async function ResearchIndex() {
       </section>
       <ul className="mt-6 divide-y divide-line">
         {rows.map(({ company, research: r }) => {
-          const s = r.scorecard ?? null;
+          const s = r.scorecard ? cleanScorecard(r.scorecard) : null;
           const info = summary(s);
           return (
             <li key={company.id}>
