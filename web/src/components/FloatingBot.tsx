@@ -45,7 +45,7 @@ export function FloatingBot() {
       onPointerLeave={() => {
         if (hold.current) clearTimeout(hold.current);
       }}
-      className={`fixed right-4 z-40 flex items-center justify-center rounded-full text-white transition-transform active:scale-95 ${
+      className={`finn-bot fixed right-4 z-40 flex items-center justify-center rounded-full text-white transition-transform active:scale-95 ${
         pulse ? "bot-pulse" : ""
       }`}
       style={{

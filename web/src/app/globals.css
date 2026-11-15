@@ -332,3 +332,22 @@ details > summary::-webkit-details-marker { display: none; }
 .no-scrollbar { scrollbar-width: none; }
 
 input[type="range"] { accent-color: var(--accent); }
+
+/* Desktop presentation. The app is mobile-first; on wide screens show the single
+   column as an intentional framed canvas on a soft backdrop, rather than naked
+   content stranded in white space. All gated to >=768px: mobile is untouched. */
+@media (min-width: 768px) {
+  body {
+    background:
+      radial-gradient(1100px 520px at 50% -8%, color-mix(in srgb, var(--pastel-a) 45%, var(--bg)), transparent 62%),
+      var(--raised);
+  }
+  .app-shell {
+    background: var(--bg);
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    box-shadow: 0 40px 90px -45px rgb(16 20 32 / 0.3);
+  }
+  /* The floating bot hugs the column's right edge, not the far screen corner. */
+  .finn-bot { right: max(1rem, calc(50vw - 13rem)) !important; }
+}

@@ -29,7 +29,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className={`${geist.variable}`}>
         <AskProvider>
           <main
-            className="mx-auto min-h-dvh max-w-md px-4"
+            className="app-shell mx-auto min-h-dvh max-w-md px-4"
             style={{ paddingBottom: "calc(var(--dock-h) + env(safe-area-inset-bottom) + 24px)" }}
           >
             {children}
