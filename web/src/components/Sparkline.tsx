@@ -43,11 +43,13 @@ export function Sparkline({ points, mark, marks = [], height = 84 }: { points: {
 }
 
 /** Tiny inline trend for list rows. */
-export function MiniSpark({ values, width = 56, height = 22 }: { values: number[]; width?: number; height?: number }) {
+export function MiniSpark({ values, width = 56, height = 22, positive }: { values: number[]; width?: number; height?: number; positive?: boolean }) {
   if (values.length < 2) return <span style={{ width, height }} className="inline-block" />;
   const min = Math.min(...values);
   const max = Math.max(...values);
-  const up = values[values.length - 1] >= values[0];
+  // Colour by the day move when given (so the line agrees with the change pill),
+  // otherwise fall back to the series' own start-to-end trend.
+  const up = positive ?? values[values.length - 1] >= values[0];
   const d = values.map((v, i) => `${i ? "L" : "M"}${((i / (values.length - 1)) * width).toFixed(1)},${(height - 2 - ((v - min) / (max - min || 1)) * (height - 4)).toFixed(1)}`).join(" ");
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden>

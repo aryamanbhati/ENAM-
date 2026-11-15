@@ -82,7 +82,7 @@ export default async function Portfolio() {
                 </span>
               </span>
               <span className="hidden w-[56px] shrink-0 sm:block">
-                {r.spark.length > 1 && <MiniSpark values={r.spark} width={56} height={26} />}
+                {r.spark.length > 1 && <MiniSpark values={r.spark} width={56} height={26} positive={(r.move ?? 0) >= 0} />}
               </span>
               <span className="flex w-[82px] shrink-0 flex-col items-end gap-1">
                 <MovePill v={r.move} />
