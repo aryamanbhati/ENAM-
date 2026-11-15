@@ -19,7 +19,7 @@ Please find my submission for the AI Engineer build challenge below.
 
 - **Live app (try on a phone, add to home screen):** https://enam-six.vercel.app
 - **Repository:** https://github.com/aryamanbhati/ENAM-
-- **AI build history:** Claude Code engineering sessions + the claude.ai product-design chat — [share/export links here]
+- **AI build history:** attached — `FINN-ai-build-history.zip` (two Claude Code session transcripts), plus the claude.ai product-design chat [share link here]
 
 **What I built**
 
@@ -50,7 +50,7 @@ Thanks for reviewing,
 
 - [ ] **Make the repo public** — it is currently private (`aryamanbhati/ENAM-`). ENAM must be able to open it.
 - [ ] **Confirm the live app loads on a phone** — https://enam-six.vercel.app (Today, Portfolio, Research, Ask, a research run).
-- [ ] **Export the AI build history** — this Claude Code session ("Enam Build challenge project session") + the claude.ai design chat. Paste share links into the email where marked.
+- [ ] **AI build history is compiled** → `C:\Users\aryam\Downloads\FINN-ai-build-history.zip` (both Claude Code sessions + an INDEX). **It is ~42 MB, over most email limits** — upload it to Google Drive / WeTransfer and paste the link in the email, or attach the two ~20 MB zips inside it separately. Add the claude.ai design-chat share link too.
 - [ ] **(Optional) Record a 60–90s demo** — Today triage → open a Needs-you card → run research on a ticker → ask the assistant. Attach or link it.
 - [ ] **OpenAI credits for Listen voice** — add credits so "Listen" uses the natural voice, or leave it on the browser fallback (works either way).
 - [ ] **Send** to assessment@enam.com with the exact subject line above.
