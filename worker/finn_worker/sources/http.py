@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import threading
 import time
 from urllib.parse import urlparse
 
@@ -18,8 +19,29 @@ log = logging.getLogger(__name__)
 
 BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36"
 HOST_INTERVAL = {"www.screener.in": 2.0, "www.bseindia.com": 1.5}
-_last: dict[str, float] = {}
-_session = requests.Session()
+# get_cached is used by the bounded transcript thread pool. Reserve per-host
+# request slots atomically and give each thread its own requests.Session.
+_host_lock = threading.Lock()
+_next_request_at: dict[str, float] = {}
+_session_local = threading.local()
+
+
+def _session() -> requests.Session:
+    session = getattr(_session_local, "value", None)
+    if session is None:
+        session = requests.Session()
+        _session_local.value = session
+    return session
+
+
+def _wait_for_host_slot(host: str) -> None:
+    with _host_lock:
+        now = time.monotonic()
+        slot = max(now, _next_request_at.get(host, now))
+        _next_request_at[host] = slot + HOST_INTERVAL.get(host, 1.0)
+    wait = slot - time.monotonic()
+    if wait > 0:
+        time.sleep(wait)
 
 
 def url_key(url: str) -> str:
@@ -46,12 +68,9 @@ def get_cached(url: str, kind: str = "bin", max_age_s: float | None = None, atte
         headers["Referer"] = "https://www.bseindia.com/"
     last_exc: Exception | None = None
     for attempt in range(attempts):
-        wait = HOST_INTERVAL.get(host, 1.0) - (time.monotonic() - _last.get(host, 0))
-        if wait > 0:
-            time.sleep(wait)
-        _last[host] = time.monotonic()
+        _wait_for_host_slot(host)
         try:
-            r = _session.get(url, headers=headers, timeout=90, allow_redirects=True)
+            r = _session().get(url, headers=headers, timeout=90, allow_redirects=True)
             if r.status_code == 200 and r.content:
                 if kind == "pdf" and not r.content.startswith(b"%PDF"):
                     raise ValueError(f"not a PDF ({r.headers.get('content-type')})")
