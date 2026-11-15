@@ -207,18 +207,38 @@ def _run(db: Db, gw: Gateway, progress: Progress, symbol: str, force: bool) -> d
         return {"company_id": cid, "transcripts": 0}
 
     periods = [p for p, _ in transcripts]
-    # 2-4. read, extract, verify
+    # 2-4. read, extract, verify. Fetching and model extraction are I/O-bound;
+    # run at most three transcripts concurrently. Persist documents and assemble IDs
+    # in the original period order so downstream results remain deterministic.
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    def process_transcript(period: str, url: str):
+        data = get_cached(url, kind="pdf")
+        pages = pages_text(data)
+        out = gw.structured(
+            step="research.promises", tier="cheap", prompt="promises", schema=Commitments,
+            values={"company": page.name, "period": period, "transcript": with_page_markers(pages)},
+        )
+        return period, url, data, pages, out
+
+    progress(f"Processing {len(transcripts)} transcripts (up to 3 concurrently)")
+    processed: dict[str, tuple[str, bytes, list[str], Commitments]] = {}
+    with ThreadPoolExecutor(max_workers=min(3, len(transcripts)), thread_name_prefix="finn-transcript") as pool:
+        futures = {pool.submit(process_transcript, period, url): period for period, url in transcripts}
+        for future in as_completed(futures):
+            period = futures[future]
+            # Preserve the existing fail-fast behavior: a failed transcript fails the run.
+            result_period, url, data, pages, out = future.result()
+            processed[result_period] = (url, data, pages, out)
+            progress(f"Finished extracting {result_period}")
+
     items: list[dict] = []
     docs: dict[str, dict] = {}
     dropped = 0
-    for period, url in transcripts:
-        progress(f"Reading {period} transcript")
-        data = get_cached(url, kind="pdf")
-        pages = pages_text(data)
+    for period, _ in transcripts:
+        url, data, pages, out = processed[period]
         doc_id = store_document(db, gw, cid, period, url, pages, data)
         docs[period] = {"id": doc_id, "pages": pages, "url": url}
-        out = gw.structured(step="research.promises", tier="cheap", prompt="promises", schema=Commitments,
-                            values={"company": page.name, "period": period, "transcript": with_page_markers(pages)})
         kept = 0
         for c in out.items:
             ok, found = quote_on_page(c.quote, pages, c.page)
