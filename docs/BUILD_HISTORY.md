@@ -1,107 +1,119 @@
-# FINN — AI build history
+# FINN — build history and AI collaboration
 
-How FINN was built, and how I worked with AI coding agents to build it. This is a curated narrative of the development journey: the decisions, the trade-offs, the dead ends I backed out of, and the reasoning at each step. The raw agent transcripts are attached separately; this is the map that makes sense of them.
+This document explains how I approached the build: the product decisions I made, the engineering problems I encountered, where I changed direction, and how I used AI tools during implementation.
 
-**How I worked.** I used two surfaces deliberately. **claude.ai** for product and design thinking (arguing out the thesis, the interaction model, what to cut). **Claude Code** as the engineering pair for implementation, with me directing, reviewing, and course-correcting at every step. I treated the agent as a fast, literal implementer, not an oracle: I set the architecture and the guardrails, made every product call myself, and verified its output rather than trusting it. Where it drifted, I caught it and redirected. That discipline is the thread through everything below.
+The accompanying archive contains the raw Claude Code sessions. The product-design conversation is shared separately. This document is an index and narrative, not a substitute for those original records.
 
----
+## How I used AI tools
 
-## Phase 1 — The thesis, and scoping with a scalpel
+I used two workflows for different kinds of work:
 
-Before writing any code I forced myself to answer one question: what is the actual scarce skill here? The brief said it's filtering, not aggregating. I pushed that further: for an investment firm the scarce skill is **filtering you can trust**. A feed that is 95% right is worse than no feed, because the first time it buries something material the investor stops believing it. That reframing drove every later decision.
+- **Claude.ai** helped me challenge the product thesis, explore interaction models, and decide what to prioritise or leave out.
+- **Claude Code** helped implement and iterate on the application, worker pipelines, tests and documentation.
 
-From that, three scoping calls I made up front and held to:
+I treated the tools as collaborators that could accelerate implementation and expose alternatives, not as authorities. I set the product direction, chose the architecture, reviewed the code and output, and checked important claims against the running application or source. When an implementation or generated explanation was wrong, I corrected it.
 
-- **Depth over breadth.** The brief listed eight possible pull-side analyses. I deliberately built **one** of them properly, "promised vs delivered," because the brief literally said that is the output they value most, and because a demo that nails one workflow beats one that spreads thin. I wrote the cuts down on purpose (bull/bear, balance sheet, cash quality) so the trade-off was a decision, not an omission.
-- **A triage model, not a feed.** Three tiers, *Needs you / Worth knowing / Routine*, with routine collapsed, never deleted. The product answers "does anything need me?" before showing anything.
-- **The signature insight: "quietly dropped."** A guidance target stated once and then never mentioned again. This is the line between *summarising* management and *analysing* them, and I made it the hero of the research page.
+The most useful pattern was iterative: define the constraint, ask for an implementation or critique, inspect the result, test it, and revise the decision if the evidence warranted it.
 
-I ran this phase in plan mode: propose the architecture, argue it, then build. Nothing was coded until the thesis held up.
+## 1. Starting with the product thesis
 
----
+The challenge described information overload as the problem and filtering as the scarce skill. I reframed the requirement as **filtering that investors can trust**.
 
-## Phase 2 — Data spike: the unglamorous part where correctness is won
+That led to three early decisions:
 
-The data sources are "plumbing," but plumbing is exactly where a finance product breaks. I spiked all three sources first and hit real problems that needed judgment, not just code:
+1. **Build a triage workflow, not another chronological feed.** The core interaction became Needs you / Worth knowing / Routine.
+2. **Keep routine information available without giving it equal visual weight.** Routine items are collapsed, not deleted.
+3. **Make promised-versus-delivered the central research workflow.** Rather than attempting every possible financial-analysis section, I focused on management commitments and whether later evidence supports them.
 
-- **BSE blocks plain HTTP clients** (Akamai returns 403 to `httpx`) and intermittently returns empty bodies even when it answers. I routed filings through the `bse` package with a 1.5s throttle and backoff, and confirmed GitHub Actions runners are accepted, so the ingestion cron needs no other host.
-- **Results get filed twice on the same day** (the "Financial Results" document and the board-meeting outcome that encloses it). Naively that double-counts and double-alerts. I collapse them to one: the results filing triggers, the enclosing outcome steps down to Worth knowing, deduped with a unique DB constraint.
-- **"General" is BSE's vaguest and most common subcategory** (~20% of filings). I run subject-keyword rules first and only send what the rules can't place to a cheap model, which may only move a filing *down* to routine when it is confident.
+The research concept that became FINN's signature is **quietly dropped guidance**: a target that management stated and later stopped discussing. I wanted to surface this carefully, with explicit conditions, rather than treat every missing mention as proof that a target had been abandoned.
 
-The point of this phase was to learn the domain's edge cases before committing to a schema.
+## 2. Learning the data sources before designing around them
 
----
+The first engineering work was to test the external sources and understand their failure modes.
 
-## Phase 3 — Schema and pipelines, built guardrails-first
+- BSE's public endpoints did not behave like a generic JSON API. Plain HTTP requests could be rejected by Akamai, and responses could occasionally be empty. I used the BSE package, request pacing and retries rather than assuming a simple client would be reliable.
+- Results information can appear in both a financial-results filing and a related board-meeting outcome. Treating both as independent events creates duplicate cards and alerts, so I added deduplication.
+- BSE's broad categories, especially General, are not specific enough to determine importance on their own. I put subject-based rules first and reserve model classification for ambiguous cases.
 
-I designed the data model around one rule: **the model never produces a number, and never makes a claim it can't point to.** Deterministic work (every figure, every verdict, every QoQ/YoY) is done in code; the model only classifies, extracts and writes prose. They never cross. That isn't a prompt instruction, it's enforced by what each component can touch.
+This phase shaped the ingestion pipeline and prevented the product model from depending on assumptions that the source data did not support.
 
-The filings pipeline became: fetch → upsert by exchange ID (idempotent) → rules tier → cheap-model tier for vague categories (failing *upward*, so uncertainty is shown, never buried) → trigger match → enrich → dedupe alert → web push. EBITDA, which filings rarely report, I compute (PBT + finance costs + D&A) and label as computed, and reconcile PBT−tax against PAT as a sanity check.
+## 3. Building the data model and ingestion pipeline
 
-Infra decision I'm happy with: **no servers to babysit.** The whole backend is a Python CLI on GitHub Actions, cron for filings/prices and per-ticker dispatch for research, with the `jobs` table acting as the queue. Idempotent, serialized, retryable, zero idle cost. Correct for this scale, and I documented exactly when it would stop being enough.
+I designed the processing path around idempotency and evidence:
 
----
+`fetch → normalise → upsert → classify → match triggers → enrich → notify`
 
-## Phase 4 — The research pipeline (the hard, interesting one)
+Exchange identifiers are used to avoid inserting the same filing repeatedly. Classification is rules-first. When the category or subject is ambiguous, a model can help, but a failed or uncertain classification is not allowed to silently become Routine.
 
-This is where the "promised vs delivered" analysis is produced for any NSE ticker. The flow: pull screener facts into the DB; collect the last six concall transcripts; extract each explicit commitment (topic, metric, target, timeframe, quote, page) with a cheap model; **verify every quote against the page it cites** and drop the ones that don't match; link the same promise across quarters; then compute the verdict *in code* for numeric targets, letting the model judge only qualitative ones, and only with passages it can cite.
+For results, I kept financial arithmetic in code. EBITDA is computed when it is not directly reported and is labelled as computed. PBT less tax is checked against PAT as a consistency test. This is more work than asking a model to produce a neat table, but it gives the result a reproducible basis.
 
-Two judgment calls I'm proud of here:
+## 4. Making research about evidence, not summaries
 
-- **"Quietly dropped" has to be earned, not guessed.** It requires two consecutive silent calls, or one silent call while the numbers are already behind. Never when the company is on or ahead of target, and never once the deadline year is complete (that earns a real verdict). This is the difference between an insight and a hallucination.
-- **Commitments carry a scope.** Only company-wide targets are compared against reported totals; a segment target is routed to the evidence-based qualitative judge, never silently measured against the company total. Margin targets in basis points are measured as a change, not a level.
+The Pull workflow retrieves recent transcripts and results material for an NSE ticker where source data is available. The worker extracts commitment candidates, including the topic, metric, target, timeframe, quotation and page reference.
 
----
+The important work happens after extraction:
 
-## Phase 5 — The frontend and the interaction model
+1. Verify each quotation against the cited page.
+2. Drop quotations that cannot be matched.
+3. Link mentions of the same commitment across reporting periods.
+4. Distinguish stated, repeated, raised, lowered and silent mentions.
+5. Compute numeric verdicts using code and available financial facts.
+6. Keep qualitative judgements tied to the retrieved evidence.
 
-The brief said the frontend is the heart, so I spent real effort on the point of view, not just the data. The Today screen is a swipeable triage stack that ends on an honest "You're caught up." Pushed items are enriched by type: results show the four headline numbers QoQ/YoY, a management change pulls the incoming person's bio *from the filing itself* (not LinkedIn), and a price spike is joined to the filing that explains it or labelled "no filing explains this move."
+Two edge cases required particular care:
 
-I iterated hard on the interaction model and wasn't precious about my first attempts. A few examples where I changed my mind on purpose:
+- **Silence is not automatically failure.** Quietly dropped guidance requires explicit conditions, such as repeated silence or silence while performance is already behind. A completed target period is judged as a normal outcome instead.
+- **Targets have scope.** A segment-level target must not be compared with company-wide totals. Margin targets expressed in basis points must be treated as changes, not absolute margin levels.
 
-- The assistant started as a docked "Ask" bar; it overlapped content and felt bolted on. I replaced it with a **floating agent** scoped to the current screen.
-- The triage count broke its own promise on a 30-day window (it showed "104 need you"). I reworked the hero so it always shows the *last-24h urgent* number, with older items as a calm "+N earlier." The product's promise had to survive the window picker.
-- I noticed the Needs-you cards repeated the company name (header + headline) and looked redundant, so I stripped the repeat. When a first attempt to distinguish them used a thick coloured side-rail, I recognised that as a generic "AI-made" tell and replaced it with a subtle, *meaningful* marker instead.
+A research run can take around 5–7 minutes because it depends on external document retrieval, PDF extraction, model calls and verification. I chose to run this as background work and expose progress rather than make the user wait on a single interactive request.
 
-Those are not course-corrections from being lost; they're the normal work of taste, catching things that were almost-right and making them right.
+## 5. Choosing the background architecture
 
----
+I chose a Python CLI worker on GitHub Actions, with scheduled workflows for filings and end-of-day prices and a dispatched workflow for company research. Supabase Postgres stores the data and job state. The web application can observe progress through the job record.
 
-## Phase 6 — The assistant, as a small multi-agent system
+This avoids operating an always-on worker service and keeps the infrastructure simple at the current scale. It is not the architecture I would choose for hundreds of concurrent long-running research jobs; the architecture audit documents the likely bottlenecks and migration path.
 
-A router reads the question and screen context and picks at most three narrow specialists (market and filings answered in code, transcripts via hybrid search). A composer writes only from their outputs. A verifier then deletes any sentence without a valid source id, so the model literally cannot speak without a citation. Every answer exposes "How I answered this": the agents, sources, tokens and cost. On the research page the agent is walled to that company's own primary documents and nothing else.
+## 6. Designing the daily interaction
 
----
+I wanted the app to feel like a focused mobile workflow rather than a desktop dashboard squeezed onto a phone.
 
-## Phase 7 — Design: iterating toward a point of view
+The Today feed uses three levels of attention. The user can open a filing into a detail experience, move through items, and reach an explicit caught-up state. The assistant is available in context, rather than requiring the user to explain which company or filing they are looking at.
 
-The visual identity went through deliberate revisions, each one a reaction to something concrete. An early editorial serif read as "designer-y" against financial data, so I committed to a single clean sans with tabular numerals. I simplified the palette to an off-white + ink base with a reserved coral for the single primary action and two quiet pastels for tinted surfaces, and checked every text/background pair against WCAG AA. When a review surfaced low-contrast figures on the dark portfolio card, I brightened the on-dark green and coral specifically for that surface. The rule throughout: **colour only ever carries meaning.**
+Several design decisions changed after testing:
 
-I also commissioned the agent to run a full UX audit of the live app at phone width and acted on it: fixed real contrast failures, touch-target sizes, headline truncation, and an overlapping control. Using the tool to critique my own work, then fixing what it found, is part of how I kept quality up.
+- I replaced the original docked Ask bar with a floating assistant entry point because the bar competed with the content and navigation.
+- I changed the Today default to seven days, while keeping the urgent hero count anchored to the last 24 hours. A longer history should help someone catch up, not redefine everything as urgent.
+- I moved from an editorial serif/sans mix to a single Geist typeface because the mixed treatment distracted from dense financial information.
+- I simplified the palette to off-white, ink, restrained pastels and a reserved coral action colour.
 
----
+I used a mobile UX audit to identify issues in contrast, touch targets, truncation and information density, then used the findings to guide fixes. The audit remains in the repository as a dated review, so it should be read as a record of what was observed at that point in the build.
 
-## Phase 8 — Hardening: a real bug, debugged properly
+## 7. Debugging a production crash
 
-The most instructive moment was a production P0: asking the assistant a question white-screened the entire app. I didn't guess. I reproduced it, instrumented the console to capture the real (unminified) error, and traced it to its root: in current Chrome, `element.scrollIntoView({behavior:'smooth'})` returns a **Promise**, and an auto-scroll `useEffect` written as an expression-arrow was handing that Promise back to React as its cleanup function. On the next run React called it as `destroy()` → "destroy is not a function" → the app unmounted. The fix was one line (wrap the effect body so it returns nothing), plus an error boundary around the answer so no future render error can ever take the app down again. Methodical reproduction over guessing is the whole story of that fix.
+One of the most useful debugging exercises involved the assistant. Asking a question caused a client-side error that could white-screen the app.
 
-I also had the agent produce a CTO-level architecture and reliability audit, and I verified its claims against the actual code rather than taking them at face value (one flagged "risk" turned out to be already enforced in code, so I corrected the report). Knowing the ceiling of your own architecture matters as much as the choices themselves.
+I reproduced the issue and traced it to an auto-scroll React effect. In the browser version involved, `scrollIntoView({ behavior: "smooth" })` returned a Promise. An expression-bodied effect returned that Promise to React, which treated it as a cleanup function. The fix was to use a braced effect body that returns no cleanup value, and to add an error boundary around the answer UI so a future rendering error would not take down the whole application.
 
----
+The important lesson was procedural: reproduce the failure, inspect the actual runtime error, isolate the responsible code, then verify the fix. Guessing from the symptom would have been slower and less reliable.
 
-## Phase 9 — Models and efficiency, chosen per step
+## 8. Routing models and controlling cost
 
-Efficiency earns bonus points, so I routed deliberately: rules settle most filings before any model runs; a cheap model does bulk extraction; a stronger model is reserved for judgement and prose; embeddings do retrieval; everything is cached by content (24% of model calls served from cache). Ingestion and research run entirely on **Gemini's free tier**, so actual spend is zero. The one place I spent latency budget instead of money is the interactive assistant, which I moved to **Groq** because a product you reach for all day has to feel instant, with Gemini kept as the fallback. Every call is logged with model, tokens, latency and cost.
+I used rules before models wherever possible. The worker uses Gemini for ingestion and research. The interactive assistant uses Groq with Gemini fallback, reflecting the different latency expectations of background research and interactive questions.
 
----
+I added content-based caching for source material, model calls and research runs. The evaluation records a 24% model-call cache hit rate. The exact benefit depends on whether the source documents have changed.
 
-## How I used AI, honestly
+## 9. What I learned about using AI in a real build
 
-I used the agent as a force multiplier, not a substitute for judgment. I set the thesis, the architecture, and the non-negotiable guardrails. I made every product and design call. I reviewed the agent's output, caught its drift (an AI-slop border here, a wrong claim in a report there, a redundant headline), and redirected it. I verified before I trusted: I had it reproduce bugs and prove fixes in a real browser rather than assert them. The agent made me dramatically faster; the thinking, the taste, and the decisions are mine.
+The tools made it possible to move quickly across frontend, backend, data pipelines and design review. But speed only helped when I kept ownership of the decisions.
 
-## What I'd do next
+I had to decide what the product should optimise for, which source failures mattered, what an LLM should be allowed to do, how uncertainty should be presented, and which generated changes were worth keeping. I also had to challenge outputs that sounded plausible but did not match the code or the running application.
 
-- Read annual reports as well as transcripts, so capex, debt and segment promises can be *measured* in code, not only judged.
-- Guidance-aware results alerts ("beat the revenue guide by 3 points") the instant results land, fusing the push and pull sides.
-- Stream and parallelise the assistant for a sub-two-second first token.
-- Drive the one hidden-material classifier error toward zero with a larger labelled set.
+My approach was to use AI to widen the set of options and accelerate execution, while keeping product judgment, verification and final responsibility with me.
+
+## What I would do next
+
+- Extend research to annual reports so capex, debt, working-capital and segment commitments can be tracked.
+- Add guidance-aware alerts that compare reported results with management's earlier expectations.
+- Expand the labelled evaluation set and have materiality judgements independently reviewed.
+- Stream the assistant and improve time-to-first-token.
+- Move background research to dedicated workers if workload and concurrency outgrow GitHub Actions.
