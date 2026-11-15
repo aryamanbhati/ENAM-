@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { ErrorBoundary } from "./ErrorBoundary";
-import { Close, Mic } from "./icons";
+import { Close, Mic, Send } from "./icons";
 
 /** What the assistant knows about where the user is. Set by each screen and by the open card. */
 export type AskScope =
@@ -168,7 +168,11 @@ function AskSheet({ turns, busy }: { turns: Turn[]; busy: boolean }) {
               )}
               {t.error && <p className="text-[14px] text-down">{t.error}</p>}
               {!t.a && !t.error && (
-                <div className="space-y-2" aria-label="Reading the sources">
+                <div className="space-y-2.5" aria-label="Reading the sources" aria-live="polite">
+                  <p className="flex items-center gap-2 text-[13px] text-muted">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ background: "var(--accent)" }} />
+                    FINN is reading the filings and transcripts. This can take a few seconds.
+                  </p>
                   <div className="sk h-3 w-5/6" />
                   <div className="sk h-3 w-4/6" />
                   <div className="sk h-3 w-3/6" />
@@ -204,6 +208,14 @@ function AskSheet({ turns, busy }: { turns: Turn[]; busy: boolean }) {
               <Mic className="h-4 w-4" />
             </button>
           )}
+          <button
+            type="submit"
+            disabled={busy || !q.trim()}
+            aria-label="Send"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink text-bg transition-opacity disabled:opacity-35"
+          >
+            <Send className="h-[18px] w-[18px]" />
+          </button>
         </form>
       </div>
     </div>
