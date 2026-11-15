@@ -12,6 +12,26 @@ function requester(req: NextRequest): string {
   return createHash("sha256").update(`finn:${ip}`).digest("hex").slice(0, 16);
 }
 
+/**
+ * Cheap pre-check so a typo'd ticker (e.g. WIPRO4) fails instantly instead of
+ * burning a 2-4 minute worker run. screener.in is the grounding source; a valid
+ * company returns a page, an unknown one returns 404. Fail OPEN on anything that
+ * is not a clean 404 (block, timeout, network error) so valid tickers and a
+ * flaky network are never wrongly rejected.
+ */
+async function tickerExists(symbol: string): Promise<boolean> {
+  try {
+    const r = await fetch(`https://www.screener.in/company/${encodeURIComponent(symbol)}/`, {
+      redirect: "follow",
+      headers: { "user-agent": "Mozilla/5.0 (compatible; FINN research)" },
+      signal: AbortSignal.timeout(6000),
+    });
+    return r.status !== 404;
+  } catch {
+    return true;
+  }
+}
+
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("job");
   if (!id) return NextResponse.json({ error: "job required" }, { status: 400 });
@@ -37,6 +57,11 @@ export async function POST(req: NextRequest) {
   const recent = new Date(Date.now() - 15 * 60e3).toISOString();
   const { data: inflight } = await db().from("jobs").select("id").eq("ticker", symbol).in("status", ["queued", "running"]).gte("created_at", recent).limit(1);
   if (inflight?.length) return NextResponse.json({ jobId: inflight[0].id });
+
+  // Fail fast on a ticker that does not exist, before dispatching a worker.
+  if (!(await tickerExists(symbol))) {
+    return NextResponse.json({ error: `We couldn't find ${symbol} on screener. Double-check the NSE ticker and try again.` }, { status: 404 });
+  }
 
   // Cost protection: per-IP rate limit and a global daily budget.
   const who = requester(req);
