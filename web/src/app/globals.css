@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
 
 /* FINN visual system: warm paper, obsidian surfaces, amber attention, mint gains and coral losses. */
 :root {
@@ -114,6 +115,9 @@
   --color-partial-soft: var(--partial-soft);
   --color-early: var(--early);
   --color-early-soft: var(--early-soft);
+  --color-mint: #34d399;
+  --color-coral: #f87171;
+  --color-amber: #fbbf24;
   --font-sans: var(--font-geist);
 }
 
@@ -362,7 +366,6 @@ input[type="range"] { accent-color: var(--accent); }
 
 
 /* FINN redesign refinements */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
 .font-display { font-family: "Plus Jakarta Sans", var(--font-geist), system-ui, sans-serif; }
 .portfolio-hero {
   border: 1px solid rgb(255 255 255 / 0.07);
