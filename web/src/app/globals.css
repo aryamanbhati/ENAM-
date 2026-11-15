@@ -116,6 +116,7 @@
   --color-early: var(--early);
   --color-early-soft: var(--early-soft);
   --color-mint: #34d399;
+  --color-mint-soft: #d1fae5;
   --color-coral: #f87171;
   --color-amber: #fbbf24;
   --font-sans: var(--font-geist);
@@ -173,7 +174,7 @@ h1, h2, h3 { letter-spacing: -0.015em; }
   overflow: hidden;
   border-radius: var(--r-xl);
   color: #f6f0e4;
-  background: var(--brand);
+  background: linear-gradient(160deg, #161c29 0%, #0e1117 58%, #0a0d12 100%);
   padding: 28px 24px;
   box-shadow: 0 18px 40px -24px rgb(16 20 32 / 0.5);
 }
