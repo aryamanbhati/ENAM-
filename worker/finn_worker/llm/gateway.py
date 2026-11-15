@@ -115,7 +115,7 @@ class Gateway:
         import threading
         self._throttle_lock = threading.Lock()
         self._next_call_at: dict[str, float] = {}
-        # 0.5s spaces requests to the same model (~2 req/s); override for provider quotas.
+        # 1.0s spaces requests to the same model by default; override only after confirming provider quotas.
         self.min_interval = float(config.env("FINN_LLM_MIN_INTERVAL", "1.0") or 1.0)
 
     # -- logging and cache ---------------------------------------------------------------------------
