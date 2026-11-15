@@ -129,9 +129,12 @@ function BarChart({ title, rows, unit }: { title: string; rows: { period: string
           const h = ((r.value - base) / span) * 100;
           const latest = i === rows.length - 1;
           return (
-            <div key={r.period} className="flex h-full flex-1 flex-col justify-end">
+            <div key={r.period} className="group relative flex h-full flex-1 flex-col justify-end">
+              <div className="pointer-events-none absolute -top-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-md bg-ink px-2 py-1 text-[11px] font-medium text-bg opacity-0 shadow transition-opacity group-hover:opacity-100">
+                {qLabel(r.period)} · ₹{Math.round(r.value).toLocaleString("en-IN")} {unit}
+              </div>
               <div
-                className={`w-full rounded-[3px] ${latest ? (trendUp ? "bg-up" : "bg-down") : "bg-brand/25"}`}
+                className={`w-full rounded-[3px] transition-opacity group-hover:opacity-80 ${latest ? (trendUp ? "bg-up" : "bg-down") : "bg-brand/25"}`}
                 style={{ height: `${Math.max(h, 4)}%` }}
                 title={`${r.period}: ₹${Math.round(r.value).toLocaleString("en-IN")} ${unit}`}
               />
