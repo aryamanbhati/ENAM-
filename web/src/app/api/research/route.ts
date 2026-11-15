@@ -4,8 +4,10 @@ import { canWrite, db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-const PER_IP_PER_HOUR = Number(process.env.FINN_RESEARCH_PER_IP_HOUR ?? 3);
-const DAILY_CAP = Number(process.env.FINN_RESEARCH_DAILY_CAP ?? 20);
+// Generous so testing and demos never trip it, while the guardrail stays in
+// place (cost protection). Tighten via env for a public deployment.
+const PER_IP_PER_HOUR = Number(process.env.FINN_RESEARCH_PER_IP_HOUR ?? 50);
+const DAILY_CAP = Number(process.env.FINN_RESEARCH_DAILY_CAP ?? 200);
 
 function requester(req: NextRequest): string {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "local";
