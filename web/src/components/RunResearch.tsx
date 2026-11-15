@@ -5,6 +5,32 @@ import { useEffect, useRef, useState } from "react";
 
 type Step = { t: string; msg: string };
 
+/**
+ * Estimate how far the research run has got from its progress messages, so the
+ * UI can show a determinate-ish bar instead of a wall of text. Monotonic (only
+ * moves forward); capped at 97% until the job reports done.
+ */
+function researchProgress(steps: Step[], status: string): { pct: number; label: string } {
+  const label = steps.length ? steps[steps.length - 1].msg : "Starting the worker";
+  if (status === "done") return { pct: 100, label: "Done" };
+  let pct = 5;
+  let transcriptsDone = 0;
+  for (const s of steps) {
+    const m = s.msg.toLowerCase();
+    if (m.includes("queued") || m.includes("starting") || m.includes("worker")) pct = Math.max(pct, 7);
+    if (m.includes("looking up")) pct = Math.max(pct, 14);
+    if (m.includes("quarters of results")) pct = Math.max(pct, 22);
+    if (m.includes("transcript")) pct = Math.max(pct, 28);
+    if (/verified.*dropped/.test(m)) transcriptsDone++;
+    if (m.includes("linking")) pct = Math.max(pct, 72);
+    if (m.includes("checking promises")) pct = Math.max(pct, 80);
+    if (m.includes("judging")) pct = Math.max(pct, 88);
+    if (m.includes("writing the scorecard")) pct = Math.max(pct, 95);
+  }
+  if (transcriptsDone > 0) pct = Math.max(pct, Math.min(30 + transcriptsDone * 6, 66));
+  return { pct: Math.min(pct, 97), label };
+}
+
 function browserClient() {
   const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/rest\/v1\/?$/, "");
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -80,16 +106,37 @@ export function RunResearch({ symbol, running, failed }: { symbol: string; runni
       )}
       {error && <p className="mt-3 text-sm text-down">{error}</p>}
       {status === "failed" && <p className="mt-3 text-sm text-down">Research failed. The source may not have this company, or it may be temporarily unavailable.</p>}
-      {steps.length > 0 && (
-        <ol className="mt-6 space-y-2 text-sm" aria-live="polite">
-          {steps.map((s, i) => (
-            <li key={i} className={i === steps.length - 1 && busy ? "text-ink" : "text-muted"}>
-              {s.msg}
-              {i === steps.length - 1 && busy ? "…" : ""}
-            </li>
-          ))}
-        </ol>
-      )}
+      {steps.length > 0 && (() => {
+        const { pct, label } = researchProgress(steps, status);
+        return (
+          <div className="mt-6">
+            {busy && (
+              <div className="card p-5" aria-live="polite">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="flex min-w-0 items-center gap-2 text-[13.5px] font-medium text-ink">
+                    <span className="pulse-dot h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: "var(--accent)" }} />
+                    <span className="truncate">{label}</span>
+                  </span>
+                  <span className="shrink-0 text-[15px] font-semibold tabular-nums text-ink">{pct}%</span>
+                </div>
+                <div className="relative mt-3 h-2.5 overflow-hidden rounded-full bg-raised">
+                  <div className="absolute inset-y-0 left-0 overflow-hidden rounded-full bg-ink" style={{ width: `${pct}%`, transition: "width 600ms var(--e-std)" }}>
+                    <span className="bar-sheen" />
+                  </div>
+                </div>
+                <p className="mt-2.5 text-[11.5px] text-muted">Two to four minutes on a new company. It keeps running even if you leave this screen.</p>
+              </div>
+            )}
+            <ol className="mt-4 space-y-1.5 text-[12.5px] text-muted">
+              {steps.slice(-6).map((s, i, a) => (
+                <li key={i} className={i === a.length - 1 && busy ? "text-ink" : ""}>
+                  {s.msg}
+                </li>
+              ))}
+            </ol>
+          </div>
+        );
+      })()}
       {running && !jobId && <p className="mt-4 text-sm text-muted">A research run is already in progress. Refresh in a minute.</p>}
     </section>
   );

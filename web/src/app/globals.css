@@ -351,3 +351,15 @@ input[type="range"] { accent-color: var(--accent); }
   /* The floating bot hugs the column's right edge, not the far screen corner. */
   .finn-bot { right: max(1rem, calc(50vw - 13rem)) !important; }
 }
+
+/* Research progress bar: a sheen that sweeps the filled portion so the bar reads
+   as alive even when progress messages are 20-40s apart. */
+@keyframes bar-sheen { 0% { transform: translateX(-130%); } 100% { transform: translateX(330%); } }
+.bar-sheen {
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent);
+  animation: bar-sheen 1.5s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) { .bar-sheen { animation: none; } }
