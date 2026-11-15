@@ -347,13 +347,14 @@ function NeedsCard({ item, onOpen, delay, spark }: { item: Item; onOpen: () => v
   return (
     <button
       onClick={onOpen}
-      className="card rise block w-full overflow-hidden p-4 pl-[18px] text-left transition-transform active:scale-[0.99]"
-      style={{ animationDelay: `${delay}ms`, borderLeft: "3px solid var(--accent)" }}
+      className="card rise block w-full p-4 text-left transition-transform active:scale-[0.99]"
+      style={{ animationDelay: `${delay}ms` }}
     >
       <div className="flex items-center gap-3">
         <Avatar symbol={item.company.nse_symbol} name={item.company.name} />
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: "var(--accent)" }} aria-hidden />
             <span className="truncate text-[13.5px] font-semibold">{shortName(item.company.name)}</span>
             <span className="shrink-0 text-[11px] text-faint">{relTime(item.at)}</span>
           </div>
