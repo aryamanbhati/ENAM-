@@ -15,9 +15,11 @@ Hi,
 
 My submission for the AI Engineer build challenge is below. Links first, then the thinking.
 
-- **Live app (open on a phone, add to home screen for notifications):** https://enam-six.vercel.app
+- **Live app:** https://enam-six.vercel.app
 - **Repository:** https://github.com/aryamanbhati/ENAM-
 - **AI build history:** `FINN-ai-build-history.zip` [Drive link] (two Claude Code sessions + an index), plus the claude.ai product-design chat [share link]
+
+For the best experience, please open it on a phone, add it to the home screen, and enable notifications: FINN is an installable PWA, and that is how the push alerts (the whole point of the "push" mode) actually reach you.
 
 **The bet I made**
 
