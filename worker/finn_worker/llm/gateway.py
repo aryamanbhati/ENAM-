@@ -110,7 +110,12 @@ class Gateway:
             raise LlmError("GEMINI_API_KEY is not set")
         self._http = httpx.Client(base_url=API, headers={"x-goog-api-key": key}, timeout=120)
         self._db = db
-        self._last_call: dict[str, float] = {}
+        # Reserve per-model request slots under a lock. The network call itself stays
+        # outside the lock, allowing bounded concurrent requests without throttle races.
+        import threading
+        self._throttle_lock = threading.Lock()
+        self._next_call_at: dict[str, float] = {}
+        # 1.0s spaces requests to the same model by default; override only after confirming provider quotas.
         self.min_interval = float(config.env("FINN_LLM_MIN_INTERVAL", "1.0") or 1.0)
 
     # -- logging and cache ---------------------------------------------------------------------------
@@ -136,10 +141,15 @@ class Gateway:
     # -- raw calls -----------------------------------------------------------------------------------
 
     def _throttle(self, model: str) -> None:
-        wait = self.min_interval - (time.monotonic() - self._last_call.get(model, 0))
+        # Atomically reserve a future slot. Sleeping and HTTP I/O happen without
+        # holding the lock, so other worker threads can reserve their own slots.
+        with self._throttle_lock:
+            now = time.monotonic()
+            slot = max(now, self._next_call_at.get(model, now))
+            self._next_call_at[model] = slot + self.min_interval
+        wait = slot - time.monotonic()
         if wait > 0:
             time.sleep(wait)
-        self._last_call[model] = time.monotonic()
 
     def _generate(self, model: str, system: str, user: str, schema: dict | None, temperature: float,
                   thinking: int | None = None) -> dict:
