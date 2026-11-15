@@ -57,7 +57,7 @@
   /* shadow */
   --shadow-soft: 0 1px 2px rgb(16 20 32 / 0.04), 0 10px 28px -18px rgb(16 20 32 / 0.18);
   --shadow-low: 0 8px 24px -10px rgb(16 20 32 / 0.25), 0 0 0 1px rgb(16 20 32 / 0.04);
-  --shadow-bot: 0 12px 28px -8px rgb(255 107 74 / 0.5), 0 2px 4px rgb(16 20 32 / 0.08);
+  --shadow-bot: 0 12px 28px -8px rgb(217 119 6 / 0.35), 0 2px 4px rgb(16 20 32 / 0.08);
   --card-shadow: var(--shadow-soft);
   --dock-shadow: var(--shadow-low);
 
@@ -199,13 +199,13 @@ h1, h2, h3 { letter-spacing: -0.015em; }
   justify-content: center;
   gap: 8px;
   background: var(--accent);
-  color: #ffffff;
+  color: #0e1117;
   border-radius: 999px;
   padding: 12px 20px;
   font-size: var(--t-14);
   font-weight: 600;
   min-height: 44px;
-  box-shadow: 0 1px 2px rgb(182 61 31 / 0.3), 0 10px 20px -10px rgb(182 61 31 / 0.55);
+  box-shadow: 0 1px 2px rgb(146 64 14 / 0.22), 0 10px 20px -10px rgb(146 64 14 / 0.38);
   transition: transform var(--d-fast) var(--e-std), filter var(--d-fast) var(--e-std);
 }
 .btn-accent:active { transform: scale(0.98); filter: brightness(0.95); }
