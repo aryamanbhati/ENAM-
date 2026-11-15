@@ -6,15 +6,15 @@ export const TIER_LABEL: Record<Tier, string> = { needs_you: "Needs you", worth_
 export function TierBadge({ tier }: { tier: Tier }) {
   if (tier === "needs_you") {
     return (
-      <span className="chip" style={{ background: "var(--accent)", color: "#fff" }}>
-        <span className="chip-dot" style={{ background: "#fff" }} />
+      <span className="chip" style={{ background: "var(--accent-soft)", color: "var(--accent-ink)" }}>
+        <span className="chip-dot" style={{ background: "var(--accent-ink)" }} />
         Needs you
       </span>
     );
   }
   if (tier === "worth_knowing") {
     return (
-      <span className="chip" style={{ background: "var(--raised)", color: "var(--muted)" }}>
+      <span className="chip" style={{ background: "var(--color-mint-soft)", color: "#065f46" }}>
         Worth knowing
       </span>
     );
