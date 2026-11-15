@@ -1,6 +1,8 @@
 # FINN — UX & Product Design Audit
 
-Reviewed live at `https://enam-six.vercel.app/?w=7d` on 15 Nov 2026, in Chrome at a 390px mobile viewport. Every finding below was reproduced in the browser (console + DOM measured), not inferred from code. Contrast ratios were computed in-page against the actual rendered backgrounds.
+**Review snapshot:** 15 November 2026, live application at `https://enam-six.vercel.app/?w=7d`, Chrome at a 390px mobile viewport. Findings below describe what was observed at that point in time; some were subsequently fixed during the build. Treat this as a dated design-review record, not a live issue tracker. Re-test the current deployment before assuming a finding remains open.
+
+The review used browser reproduction, console inspection and DOM measurements rather than code-only inference. Contrast ratios were computed against the rendered backgrounds. The aim is to preserve the reasoning behind the design changes, not to imply that the original defects remain in the current app.
 
 ---
 
