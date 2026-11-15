@@ -109,6 +109,22 @@ export function naturalTitle(raw: string | null | undefined, companyName: string
 }
 
 /**
+ * Strip a leading company name from a title. Used on cards that already show
+ * the company in their header, so the headline does not repeat it ("HDFC Bank
+ * re-appoints..." under an "HDFC Bank" header becomes "Re-appoints..."). The
+ * first surviving letter is capitalised so it still reads as a headline.
+ */
+export function stripLeadingCompany(title: string, companyName: string | null | undefined): string {
+  if (!title) return "";
+  const subj = shortName(companyName ?? "").trim();
+  if (subj && title.toLowerCase().startsWith(subj.toLowerCase() + " ")) {
+    const rest = title.slice(subj.length).trimStart();
+    return rest ? rest[0].toUpperCase() + rest.slice(1) : title;
+  }
+  return title;
+}
+
+/**
  * Clean a quoted passage pulled from a source document. Replaces OCR-style
  * double hyphens with a real em dash and tidies spacing. Used only inside a
  * blockquote: FINN's own copy still avoids em dashes per CLAUDE.md.

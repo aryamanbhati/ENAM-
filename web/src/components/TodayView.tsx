@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { categoryLabel, cleanSubject, naturalTitle, relTime, shortName, type WindowKey } from "@/lib/format";
+import { categoryLabel, cleanSubject, naturalTitle, relTime, shortName, stripLeadingCompany, type WindowKey } from "@/lib/format";
 import type { Item, Tier } from "@/lib/types";
 import { AskScopeSetter } from "./Ask";
 import { Avatar, CatChip, MovePill, SectionTitle } from "./Badges";
@@ -345,20 +345,28 @@ function WindowPicker({ win, range }: { win: WindowKey | "custom"; range?: { fro
 function NeedsCard({ item, onOpen, delay, spark }: { item: Item; onOpen: () => void; delay: number; spark?: { date: string; close: number }[] }) {
   const e = item.kind === "filing" ? item.filing.enrichment : null;
   return (
-    <button onClick={onOpen} className="card rise block w-full p-4 text-left active:scale-[0.99]" style={{ animationDelay: `${delay}ms` }}>
+    <button
+      onClick={onOpen}
+      className="card rise block w-full overflow-hidden p-4 pl-[18px] text-left transition-transform active:scale-[0.99]"
+      style={{ animationDelay: `${delay}ms`, borderLeft: "3px solid var(--accent)" }}
+    >
       <div className="flex items-center gap-3">
         <Avatar symbol={item.company.nse_symbol} name={item.company.name} />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[13.5px] font-semibold">{shortName(item.company.name)}</div>
-          <div className="mt-0.5 flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
+            <span className="truncate text-[13.5px] font-semibold">{shortName(item.company.name)}</span>
+            <span className="shrink-0 text-[11px] text-faint">{relTime(item.at)}</span>
+          </div>
+          <div className="mt-1">
             <CatChip category={itemCategory(item)} label={itemKind(item)} />
-            <span className="text-[11px] text-faint">{relTime(item.at)}</span>
           </div>
         </div>
         {item.kind === "signal" && item.move !== null && <MovePill v={item.move} />}
       </div>
 
-      <p className="clamp-2 mt-3 text-[18px] font-semibold leading-[1.3] tracking-[-0.01em] text-ink">{itemTitle(item)}</p>
+      <p className="clamp-2 mt-3 text-[18px] font-semibold leading-[1.3] tracking-[-0.01em] text-ink">
+        {stripLeadingCompany(itemTitle(item), item.company.name)}
+      </p>
 
       {item.kind === "signal" && (
         <div className="mt-3 flex items-center gap-3 rounded-2xl bg-raised px-3 py-2.5">

@@ -12,7 +12,13 @@ export function ResearchView({ company, research: r, promises: allPromises, docs
   const { ask } = useAsk();
   const docUrl = new Map(docs.map((d) => [d.id, d.url]));
   // Drop "not measurable" commitments entirely: they add noise without a verdict.
-  const promises = allPromises.filter((p) => p.verdict !== "not_measurable");
+  // Order the rest by outcome: delivered first, then partly, missed, quietly
+  // dropped, too early, so the kept promises lead and the lapses follow.
+  const VERDICT_ORDER: Record<string, number> = { delivered: 0, partly: 1, missed: 2, dropped: 3, too_early: 4, not_measurable: 5 };
+  const promises = allPromises
+    .filter((p) => p.verdict !== "not_measurable")
+    .slice()
+    .sort((a, b) => (VERDICT_ORDER[a.verdict] ?? 9) - (VERDICT_ORDER[b.verdict] ?? 9));
   const s = cleanScorecard(r.scorecard);
   const total = s.total ?? 0;
   const snap = r.snapshot;

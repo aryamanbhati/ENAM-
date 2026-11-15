@@ -22,13 +22,13 @@ export default async function ResearchIndex() {
   return (
     <>
       <AskScopeSetter scope={{ screen: "portfolio" }} />
-      <Masthead title="Research" sub="Promises vs delivery" />
+      <Masthead title="Research" sub="Any company, from its own filings" />
       <section className="pt-5">
-        <p className="font-serif text-[26px] leading-[1.15] tracking-[-0.01em] text-ink">
-          What management promised, and what they delivered.
+        <p className="text-[26px] font-semibold leading-[1.15] tracking-[-0.02em] text-ink">
+          The numbers, and whether management kept their word.
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          Built only from the company&apos;s own concall transcripts and quarterly results. Every quote is checked against its page; every number is computed, not generated.
+          Built only from the company&apos;s own concall transcripts and quarterly results: eight-quarter trajectory, and every explicit commitment tracked against what was delivered. Every quote is checked against its page; every number is computed, not generated.
         </p>
         <div className="mt-4">
           <TickerSearch />
