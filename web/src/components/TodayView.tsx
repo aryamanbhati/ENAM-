@@ -199,7 +199,7 @@ export function TodayView(props: TodayProps) {
         </section>
       )}
 
-      <section>
+      <section id="needs-section" className="scroll-mt-4">
         <SectionTitle count={n}>Needs you</SectionTitle>
         {n === 0 ? (
           <div className="card px-4 py-6 text-center text-sm text-muted">Nothing crossed your alerts in the {winLabel}.</div>
@@ -236,7 +236,7 @@ export function TodayView(props: TodayProps) {
         </section>
       )}
 
-      <section>
+      <section id="routine-section" className="scroll-mt-4">
         <button onClick={() => setShowRoutine((v) => !v)} className="flex w-full items-center justify-between rounded-2xl border border-dashed border-line px-4 py-3 text-sm text-muted" aria-expanded={showRoutine}>
           <span>
             <b className="font-semibold tabular-nums text-ink">{r}</b> routine filing{r === 1 ? "" : "s"} hidden
@@ -370,7 +370,7 @@ function NeedsCard({ item, onOpen, delay, spark }: { item: Item; onOpen: () => v
 
       {item.kind === "signal" && (
         <div className="mt-3 flex items-center gap-3 rounded-2xl bg-raised px-3 py-2.5">
-          {spark && <MiniSpark values={spark.map((p) => p.close)} width={72} height={28} />}
+          {spark && <MiniSpark values={spark.map((p) => p.close)} width={72} height={28} positive={(item.move ?? 0) >= 0} /> }
           <p className={`text-[13px] ${item.explainedBy ? "text-muted" : "font-medium text-partial"}`}>
             {item.explainedBy ? `Explained by ${categoryLabel(item.explainedBy.finn_category).toLowerCase()} filed ${relTime(item.explainedBy.filed_at)}` : "No filing explains this move"}
           </p>
