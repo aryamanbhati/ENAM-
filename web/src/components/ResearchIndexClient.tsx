@@ -56,6 +56,9 @@ export function ResearchIndexClient({ rows }: { rows: Row[] }) {
   }, [router]);
 
   useEffect(() => {
+    // Next.js may restore a cached route segment when navigating back.
+    // Force a fresh server render immediately on mount, then track active jobs.
+    router.refresh();
     void loadJobs();
     const poll = window.setInterval(() => void loadJobs(), 5000);
     const onResume = () => {
