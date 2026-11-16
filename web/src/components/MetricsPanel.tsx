@@ -1,3 +1,5 @@
+"use client";
+import { useState } from "react";
 import type { CompanyMetrics } from "@/lib/queries";
 import { crore, pct } from "@/lib/format";
 
@@ -105,6 +107,7 @@ export function MetricsPanel({ metrics }: { metrics: CompanyMetrics }) {
  * labelled so the baseline is never misread. The latest bar is highlighted.
  */
 function BarChart({ title, rows, unit }: { title: string; rows: { period: string; value: number }[]; unit: string }) {
+  const [active, setActive] = useState<number | null>(null);
   const vals = rows.map((r) => r.value);
   const max = Math.max(...vals);
   const min = Math.min(...vals);
@@ -113,13 +116,16 @@ function BarChart({ title, rows, unit }: { title: string; rows: { period: string
   const first = rows[0].value;
   const last = rows[rows.length - 1].value;
   const trendUp = last >= first;
+  // What the header figure shows: the tapped bar if any, else the latest.
+  const shown = active !== null ? rows[active] : rows[rows.length - 1];
 
   return (
     <div className="rounded-[14px] border border-line bg-surface p-4">
       <div className="flex items-baseline justify-between">
         <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted">{title}</span>
         <span className="text-[16px] font-semibold tabular-nums tracking-[-0.02em] text-ink">
-          ₹{Math.round(last).toLocaleString("en-IN")} {unit}
+          <span className="mr-1.5 text-[11px] font-medium text-muted">{active !== null ? qLabel(shown.period) : "latest"}</span>
+          ₹{Math.round(shown.value).toLocaleString("en-IN")} {unit}
         </span>
       </div>
       <div className="relative mt-3 flex h-24 items-end gap-[6px]">
@@ -128,17 +134,25 @@ function BarChart({ title, rows, unit }: { title: string; rows: { period: string
         {rows.map((r, i) => {
           const h = ((r.value - base) / span) * 100;
           const latest = i === rows.length - 1;
+          const on = active === i;
           return (
-            <div key={r.period} className="group relative flex h-full flex-1 flex-col justify-end">
-              <div className="pointer-events-none absolute -top-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-md bg-ink px-2 py-1 text-[11px] font-medium text-bg opacity-0 shadow transition-opacity group-hover:opacity-100">
+            <button
+              type="button"
+              key={r.period}
+              onClick={() => setActive((a) => (a === i ? null : i))}
+              aria-label={`${r.period}: ${Math.round(r.value).toLocaleString("en-IN")} ${unit}`}
+              className="group relative flex h-full flex-1 cursor-pointer flex-col justify-end border-0 bg-transparent p-0"
+            >
+              <span
+                className={`pointer-events-none absolute -top-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-md bg-ink px-2 py-1 text-[11px] font-medium text-bg shadow transition-opacity group-hover:opacity-100 ${on ? "opacity-100" : "opacity-0"}`}
+              >
                 {qLabel(r.period)} · ₹{Math.round(r.value).toLocaleString("en-IN")} {unit}
-              </div>
-              <div
-                className={`w-full rounded-[3px] transition-opacity group-hover:opacity-80 ${latest ? (trendUp ? "bg-up" : "bg-down") : "bg-brand/25"}`}
+              </span>
+              <span
+                className={`w-full rounded-[3px] transition-opacity group-hover:opacity-80 ${on ? "opacity-80 ring-2 ring-ink/20" : ""} ${latest ? (trendUp ? "bg-up" : "bg-down") : "bg-brand/25"}`}
                 style={{ height: `${Math.max(h, 4)}%` }}
-                title={`${r.period}: ₹${Math.round(r.value).toLocaleString("en-IN")} ${unit}`}
               />
-            </div>
+            </button>
           );
         })}
       </div>
