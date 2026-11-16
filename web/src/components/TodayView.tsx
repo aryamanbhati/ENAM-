@@ -7,7 +7,7 @@ import type { Item, Tier } from "@/lib/types";
 import { AskScopeSetter } from "./Ask";
 import { Avatar, CatChip, MovePill, SectionTitle } from "./Badges";
 import { DetailStack } from "./DetailStack";
-import { Calendar, Chevron } from "./icons";
+import { Calendar, Chevron, Play } from "./icons";
 import { ListenBriefing } from "./ListenBriefing";
 import { MiniSpark } from "./Sparkline";
 
@@ -100,75 +100,62 @@ export function TodayView(props: TodayProps) {
         ? `Nothing new today. ${olderNeeds} still need you ${windowNoun}.`
         : "Nothing needs you."
       : `${heroCount} ${heroVerb} you ${windowNoun}.`;
-  const seg = (k: number) => `${total ? Math.max((k / total) * 100, k ? 4 : 0) : 0}%`;
+  const companyCount = new Set(items.map((i) => i.company.id)).size;
+  const briefMin = Math.max(1, Math.round(n * 0.5));
+  const pulse = [
+    { v: companyCount, l: "Companies", c: "var(--bg)" },
+    { v: n, l: "Needs you", c: "var(--needs)" },
+    { v: wk, l: "Worth knowing", c: "var(--worth)" },
+    { v: r, l: "Routine", c: "var(--bg)" },
+  ];
 
   return (
     <div className="space-y-5 pt-4">
       <AskScopeSetter scope={{ screen: "today", window: win }} />
 
-      {/* Hero: the count is the headline. Coral is reserved for it and the one action. */}
-      <section className="hero rise p-5" aria-live="polite">
-        <div className="flex justify-end">
-          <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium opacity-80">{winLabel}</span>
+      {/* Daily briefing + Portfolio Pulse */}
+      <section className="rise" aria-live="polite">
+        <div className="mb-4">
+          <p className="text-[13px] text-muted">{summary}</p>
+          <h2 className="font-display text-[26px] font-bold tracking-[-0.025em] text-ink">Daily Briefing</h2>
         </div>
-        {heroCount === 0 ? (
-          <p className="mt-3 text-[40px] font-semibold leading-[1.05] tracking-[-0.03em]">
-            {olderNeeds > 0 ? "Nothing new today." : "You're clear."}
-          </p>
-        ) : (
-          <p className="mt-1 text-[38px] font-semibold leading-[1.05] tracking-[-0.03em]">
-            <span className="count-in text-[64px] font-semibold leading-none" style={{ color: "var(--accent)" }}>
-              {heroCount}
-            </span>{" "}
-            {heroVerb} you <span className="opacity-80">{windowNoun}</span>.
-          </p>
-        )}
-        <p className="mt-3 text-[13px] opacity-80">
-          {olderNeeds > 0 && (
-            <>
-              <b className="font-semibold">+{olderNeeds}</b> earlier {windowNoun}.{" "}
-            </>
-          )}
-          {total} item{total === 1 ? "" : "s"} read, {r} routine hidden.
-        </p>
 
-        {total > 0 && (
-          <div className="mt-4">
-            <div className="flex h-[6px] gap-1 overflow-hidden rounded-full">
-              <span className="grow-x rounded-full" style={{ width: seg(n), background: "var(--accent)" }} />
-              <span className="grow-x rounded-full" style={{ width: seg(wk), animationDelay: "80ms", background: "color-mix(in srgb, var(--bg) 60%, transparent)" }} />
-              <span className="grow-x flex-1 rounded-full" style={{ animationDelay: "160ms", background: "color-mix(in srgb, var(--bg) 22%, transparent)" }} />
-            </div>
-            <div className="mt-2 flex justify-between text-[10.5px] tabular-nums opacity-80">
-              <span>
-                <b className="font-semibold">{n}</b> need you
-              </span>
-              <span>
-                <b className="font-semibold">{wk}</b> worth knowing
-              </span>
-              <span>
-                <b className="font-semibold">{r}</b> routine
-              </span>
-            </div>
+        <div className="rounded-[24px] p-5 text-bg shadow-[0_20px_45px_-24px_rgba(14,17,23,0.55)]" style={{ background: "var(--obsidian)" }}>
+          <div className="flex items-center justify-between">
+            <span className="text-[13px] font-semibold tracking-[0.01em]">Portfolio Pulse</span>
+            <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: "var(--up-dark)" }}>
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ background: "var(--up-dark)" }} />
+              {winLabel}
+            </span>
           </div>
-        )}
 
-        <div className="mt-5 flex items-center gap-2">
-          {n > 0 && (
+          <div className="mt-4 grid grid-cols-4 gap-2">
+            {pulse.map((s) => (
+              <div key={s.l}>
+                <div className="font-mono text-[26px] font-semibold leading-none" style={{ color: s.c }}>{s.v}</div>
+                <div className="mt-1.5 text-[10.5px] leading-tight opacity-65">{s.l}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 flex items-center gap-2.5">
             <button
               onClick={() => setOpen({ tier: "needs_you", index: 0 })}
-              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-bg px-5 text-[14px] font-semibold text-ink transition-transform active:scale-[0.98]"
+              disabled={n === 0}
+              className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-full bg-bg px-4 text-[14px] font-semibold text-ink transition-transform active:scale-[0.98] disabled:opacity-50"
             >
-              Start briefing →
+              <Play className="h-3.5 w-3.5" /> Start Briefing · {briefMin} min
             </button>
-          )}
-          <ListenBriefing
-            lines={[
-              summary,
-              ...tiers.needs_you.slice(0, 6).map((i) => `${shortName(i.company.name)}: ${itemTitle(i)}`),
-              wk ? `Plus ${wk} items worth knowing.` : "",
-            ].filter(Boolean)}
-          />
+            <span className="flex items-center rounded-full px-1" style={{ background: "rgba(246,240,228,0.1)" }}>
+              <ListenBriefing
+                lines={[
+                  summary,
+                  ...tiers.needs_you.slice(0, 6).map((i) => `${shortName(i.company.name)}: ${itemTitle(i)}`),
+                  wk ? `Plus ${wk} items worth knowing.` : "",
+                ].filter(Boolean)}
+              />
+            </span>
+          </div>
         </div>
       </section>
 
