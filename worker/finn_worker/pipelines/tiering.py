@@ -75,7 +75,7 @@ SUBCATEGORY_RULES: dict[str, Rule] = {
     "joint venture": _r("M&A", WK, True, "Joint venture update"),
     "diversification / disinvestment": _r("M&A", WK, True, "Stake sale or diversification"),
     "restructuring": _r("M&A", WK, True, "Corporate restructuring"),
-    "postal ballot": _r("postal_ballot", RT, False, "Postal ballot notice or result"),
+    "postal ballot": _r("postal_ballot", WK, False, "Shareholders asked to vote on a resolution"),
     "egm": _r("agm_egm", RT, False, "General meeting paperwork"),
     "agm": _r("agm_egm", RT, False, "General meeting paperwork"),
     "certificate under reg. 74 (5) of sebi (dp) regulations, 2018": _r("unclassified", RT, False, "Depository compliance certificate"),
