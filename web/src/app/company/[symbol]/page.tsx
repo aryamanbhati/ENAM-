@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AskScopeSetter } from "@/components/Ask";
-import { Avatar, Move, SegmentedBar, StatusChip, TierBadge, VERDICT } from "@/components/Badges";
+import { Avatar, Move, TierBadge } from "@/components/Badges";
 import { Masthead } from "@/components/Masthead";
 import { PriceChart } from "@/components/PriceChart";
-import { categoryLabel, cleanScorecard, keptLine, naturalTitle, relTime, shortName } from "@/lib/format";
+import { categoryLabel, cleanScorecard, naturalTitle, relTime, shortName } from "@/lib/format";
 import { companyBySymbol, companyFilings, marketState, portfolio, research } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -19,8 +19,17 @@ export default async function CompanyHub({ params }: { params: Promise<{ symbol:
   const routine = filings.length - material.length;
   const r = rs.research;
   const scorecard = r?.scorecard ? cleanScorecard(r.scorecard) : null;
-  const top = rs.promises.filter((p) => p.verdict !== "not_measurable").slice(0, 3);
   const weight = weights.get(c.id);
+  const s30 = m?.series.slice(-30) ?? [];
+  const chg30 = s30.length > 1 ? (s30[s30.length - 1].close / s30[0].close - 1) * 100 : null;
+  const tiles = scorecard
+    ? [
+        { v: scorecard.total ?? 0, l: "Promises", c: "var(--ink)", bg: "var(--raised)" },
+        { v: scorecard.delivered ?? 0, l: "On track", c: "var(--up)", bg: "var(--up-soft)" },
+        { v: scorecard.partly ?? 0, l: "At risk", c: "var(--worth-ink)", bg: "var(--worth-soft)" },
+        { v: (scorecard.missed ?? 0) + (scorecard.dropped ?? 0), l: "Not met", c: "var(--down)", bg: "var(--down-soft)" },
+      ]
+    : [];
   return (
     <>
       <AskScopeSetter scope={{ screen: "company", symbol: c.nse_symbol, companyId: c.id }} />
@@ -54,9 +63,23 @@ export default async function CompanyHub({ params }: { params: Promise<{ symbol:
         )}
       </section>
 
-      {m && (
-        <div className="mt-4">
-          <PriceChart points={m.series.slice(-30)} />
+      {m && s30.length > 1 && (
+        <div className="card mt-4">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-[13px] font-semibold text-ink">
+              Price <span className="text-muted">(30D)</span>
+            </span>
+            {chg30 !== null && (
+              <span
+                className="rounded-full px-2 py-0.5 text-[12px] font-semibold tabular-nums"
+                style={{ background: chg30 >= 0 ? "var(--up-soft)" : "var(--down-soft)", color: chg30 >= 0 ? "var(--up)" : "var(--down)" }}
+              >
+                {chg30 >= 0 ? "+" : ""}
+                {chg30.toFixed(2)}%
+              </span>
+            )}
+          </div>
+          <PriceChart points={s30} />
         </div>
       )}
 
@@ -99,18 +122,15 @@ export default async function CompanyHub({ params }: { params: Promise<{ symbol:
         <h2 className="font-serif text-[20px] tracking-[-0.01em] text-ink">Promised vs delivered</h2>
         {r?.status === "ready" && scorecard ? (
           <>
-            <p className="mt-2 font-serif text-[22px] leading-snug text-ink">{keptLine(scorecard).head}</p>
-            <div className="mt-3">
-              <SegmentedBar scorecard={scorecard} compact showLegend={false} />
-            </div>
-            <ul className="mt-4 space-y-2">
-              {top.map((p) => (
-                <li key={p.id} className="flex items-center gap-2">
-                  <StatusChip verdict={p.verdict} />
-                  <span className={`min-w-0 truncate text-[13px] ${VERDICT[p.verdict].color}`}>{p.topic}</span>
-                </li>
+            <p className="mt-1 text-[12.5px] text-muted">Tracking key management commitments.</p>
+            <div className="mt-3 grid grid-cols-4 gap-2">
+              {tiles.map((t) => (
+                <div key={t.l} className="rounded-[14px] px-1 py-3 text-center" style={{ background: t.bg }}>
+                  <div className="font-mono text-[20px] font-semibold leading-none" style={{ color: t.c }}>{t.v}</div>
+                  <div className="mt-1 text-[10px] font-medium" style={{ color: t.c, opacity: 0.85 }}>{t.l}</div>
+                </div>
               ))}
-            </ul>
+            </div>
           </>
         ) : r?.status === "no_guidance" ? (
           <p className="mt-2 text-sm text-muted">No explicit guidance found in the last {r.transcripts ?? 0} transcripts.</p>
