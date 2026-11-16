@@ -1,6 +1,5 @@
 import { AskScopeSetter } from "@/components/Ask";
 import { Masthead } from "@/components/Masthead";
-import { MetricsPanel } from "@/components/MetricsPanel";
 import { ResearchView } from "@/components/ResearchView";
 import { RunResearch } from "@/components/RunResearch";
 import { shortName } from "@/lib/format";
@@ -19,10 +18,7 @@ export default async function ResearchPage({ params }: { params: Promise<{ symbo
       {c && <AskScopeSetter scope={{ screen: "research", symbol: c.nse_symbol, companyId: c.id }} />}
       <Masthead title={c ? shortName(c.name) : symbol} back={{ href: "/research", label: "Research" }} />
       {r && (r.status === "ready" || r.status === "no_guidance") && rs ? (
-        <div className="space-y-8 pt-5">
-          {metrics && <MetricsPanel metrics={metrics} />}
-          <ResearchView company={c!} research={r} promises={rs.promises} docs={rs.docs} />
-        </div>
+        <ResearchView company={c!} research={r} promises={rs.promises} docs={rs.docs} metrics={metrics} />
       ) : (
         <RunResearch symbol={symbol} running={r?.status === "running"} failed={r?.status === "failed"} />
       )}

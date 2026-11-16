@@ -6,39 +6,55 @@
   One font family: Geist. All numbers tabular.
 */
 :root {
-  /* colour */
-  --bg: #f7f5f2;
+  /* colour. New system: cream field, obsidian ink + dark hero cards, one coral
+     alert for "needs you" and the CTA, amber for "worth knowing". Up/down keep
+     their green/red meaning. */
+  --bg: #f7f5f0;
   --surface: #ffffff;
-  --raised: #f0ede8;
-  --ink: #101420;
-  --ink-2: #1c2235;
-  --muted: #4b5261;
-  --faint: #5f6678;
-  --line: #e5e1d8;
+  --card: #faf8f4;
+  --raised: #efeadf;
+  --ink: #0e1117;
+  --ink-2: #1b2130;
+  --muted: #565d6e;
+  --faint: #868d9d;
+  --line: #e7e2d7;
 
-  --brand: #101420;
-  --brand-2: #1c2235;
-  --brand-soft: #e7e4df;
+  /* obsidian: the dark pulse/hero cards */
+  --obsidian: #0e1117;
+  --obsidian-2: #181b27;
+  --brand: #0e1117;
+  --brand-2: #1b2130;
+  --brand-soft: #e8e3da;
 
-  /* reserved coral: used only on the primary CTA + the hero count */
-  --accent: #ff6b4a;
-  --accent-ink: #b63d1f;
-  --accent-soft: #ffe3db;
+  /* coral alert: "needs you" + the primary CTA */
+  --accent: #ef5f43;
+  --accent-ink: #b1401f;
+  --accent-soft: #fce3dc;
+  --needs: #ef5f43;
+  --needs-ink: #b1401f;
+  --needs-soft: #fce3dc;
 
-  /* pastels: tinted surfaces for tiles and status blocks */
+  /* amber: "worth knowing" */
+  --worth: #c98a00;
+  --worth-ink: #875c00;
+  --worth-soft: #f8ebcb;
+
+  /* pastels: kept for any tinted tile that still uses them */
   --pastel-a: #ece4f7;
   --pastel-a-ink: #4a3b7a;
   --pastel-b: #ffe4d6;
   --pastel-b-ink: #8a3d1b;
 
-  --up: #1c7c54;
-  --up-soft: #e3f1e8;
-  --down: #c8372d;
-  --down-soft: #fbe0dd;
-  --partial: #b26b00;
-  --partial-soft: #f8ead0;
-  --early: #6b6f80;
-  --early-soft: #ebeaea;
+  --up: #11925b;
+  --up-soft: #e2f2e9;
+  --up-dark: #34d399;
+  --down: #d9483b;
+  --down-soft: #fbe3e0;
+  --down-dark: #f87171;
+  --partial: #b07a00;
+  --partial-soft: #f7e9c8;
+  --early: #6b7180;
+  --early-soft: #ece9e3;
 
   /* spacing: 4px base */
   --s-1: 4px;
@@ -118,7 +134,9 @@
   --color-partial-soft: var(--partial-soft);
   --color-early: var(--early);
   --color-early-soft: var(--early-soft);
-  --font-sans: var(--font-geist);
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
 }
 
 html,
@@ -135,16 +153,18 @@ body {
 a, button { -webkit-tap-highlight-color: color-mix(in srgb, var(--accent) 25%, transparent); }
 
 body {
-  font-family: var(--font-geist), system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
-  font-feature-settings: "tnum" 1, "ss01" 1;
-  letter-spacing: -0.005em;
+  letter-spacing: -0.006em;
 }
 
-/* Replace every `font-serif` usage: the project has one family only. */
-.font-serif, [class*="font-serif"] { font-family: var(--font-geist), system-ui, sans-serif !important; }
+/* Headlines and big figures use the display face (Plus Jakarta Sans). Legacy
+   `font-serif` class names are remapped to it so headings pick it up app-wide. */
+.font-serif, [class*="font-serif"], .font-display { font-family: var(--font-display), system-ui, sans-serif !important; }
+h1, h2, h3 { font-family: var(--font-display), system-ui, sans-serif; letter-spacing: -0.02em; }
 
-h1, h2, h3 { letter-spacing: -0.015em; }
+/* Numbers use the mono face with tabular figures. */
+.tabular-nums, .font-mono { font-family: var(--font-mono), ui-monospace, monospace; font-variant-numeric: tabular-nums; }
 
 /* Surfaces */
 .card {

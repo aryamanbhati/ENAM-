@@ -7,6 +7,31 @@ export const Bell = ({ className }: P) => (
     <path d="M10.3 20a1.9 1.9 0 0 0 3.4 0" />
   </svg>
 );
+export const Home = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" className={className} {...base} aria-hidden>
+    <path d="M3 11.5 12 4l9 7.5M5 10v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9" />
+  </svg>
+);
+export const Bars = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" className={className} {...base} aria-hidden>
+    <path d="M5 20V10M12 20V4M19 20v-7" />
+  </svg>
+);
+export const Chat = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" className={className} {...base} aria-hidden>
+    <path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-4 4v-4H6a2 2 0 0 1-2-2z" />
+  </svg>
+);
+export const Headphones = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" className={className} {...base} aria-hidden>
+    <path d="M4 14v-2a8 8 0 0 1 16 0v2M4 14a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2h1v-5zm16 0a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2h-1v-5z" />
+  </svg>
+);
+export const Play = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+    <path d="M7 5v14l12-7z" />
+  </svg>
+);
 export const Sun = ({ className }: P) => (
   <svg viewBox="0 0 24 24" className={className} {...base} aria-hidden>
     <path d="M4 18h16M7 14a5 5 0 0 1 10 0M12 4v2M5.6 7.6 7 9M18.4 7.6 17 9" />

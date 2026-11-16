@@ -3,6 +3,7 @@ import { AskScopeSetter } from "@/components/Ask";
 import { Avatar, SegmentedBar } from "@/components/Badges";
 import { Masthead } from "@/components/Masthead";
 import { TickerSearch } from "@/components/TickerSearch";
+import { Chevron } from "@/components/icons";
 import { cleanScorecard, shortName } from "@/lib/format";
 import { researchedCompanies } from "@/lib/queries";
 
@@ -22,19 +23,22 @@ export default async function ResearchIndex() {
   return (
     <>
       <AskScopeSetter scope={{ screen: "portfolio" }} />
-      <Masthead title="Research" sub="Any company, from its own filings" />
-      <section className="pt-5">
-        <p className="text-[26px] font-semibold leading-[1.15] tracking-[-0.02em] text-ink">
+      <Masthead title="Research" sub="Explore any NSE-listed company" />
+
+      <section className="pt-4">
+        <p className="font-display text-[24px] font-bold leading-[1.15] tracking-[-0.025em] text-ink">
           The numbers, and whether management kept their word.
         </p>
-        <p className="mt-2 text-sm leading-relaxed text-muted">
-          Built only from the company&apos;s own concall transcripts and quarterly results: eight-quarter trajectory, and every explicit commitment tracked against what was delivered. Every quote is checked against its page; every number is computed, not generated.
+        <p className="mt-2 text-[13.5px] leading-relaxed text-muted">
+          Built only from a company&apos;s own concall transcripts and quarterly results. Every quote is checked against its page; every number is computed, not generated.
         </p>
         <div className="mt-4">
           <TickerSearch />
         </div>
       </section>
-      <ul className="mt-6 divide-y divide-line">
+
+      <h2 className="mb-3 mt-7 px-1 text-[12px] font-semibold uppercase tracking-[0.1em] text-muted">Researched companies</h2>
+      <ul className="space-y-2.5">
         {rows.map(({ company, research: r }) => {
           const s = r.scorecard ? cleanScorecard(r.scorecard) : null;
           const info = summary(s);
@@ -42,21 +46,17 @@ export default async function ResearchIndex() {
             <li key={company.id}>
               <Link
                 href={`/research/${company.nse_symbol}`}
-                className="group flex items-center gap-3 py-3.5 transition-colors active:bg-raised"
+                className="card flex items-center gap-3.5 px-4 py-3.5 transition-transform active:scale-[0.99]"
               >
-                <Avatar symbol={company.nse_symbol} name={company.name} size={36} />
+                <Avatar symbol={company.nse_symbol} name={company.name} size={42} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[14px] font-semibold text-ink">
-                    {shortName(company.name)}
-                  </span>
-                  <span className="block text-[11px] text-muted">{company.nse_symbol}</span>
+                  <span className="block truncate text-[14.5px] font-semibold text-ink">{shortName(company.name)}</span>
+                  <span className="mt-0.5 block font-mono text-[11px] text-muted">{company.nse_symbol}</span>
                 </span>
-                <span className="flex w-[128px] shrink-0 flex-col items-stretch gap-1.5">
+                <span className="flex w-[124px] shrink-0 flex-col items-stretch gap-1.5">
                   {r.status === "ready" && s ? (
                     <>
-                      <span className={`text-right text-[12px] font-semibold tabular-nums ${info.muted ? "text-muted" : "text-ink"}`}>
-                        {info.line}
-                      </span>
+                      <span className={`text-right text-[12px] font-semibold tabular-nums ${info.muted ? "text-muted" : "text-ink"}`}>{info.line}</span>
                       <SegmentedBar scorecard={s} compact showLegend={false} />
                     </>
                   ) : r.status === "running" ? (
@@ -73,6 +73,7 @@ export default async function ResearchIndex() {
                     <span className="text-right text-[12px] capitalize text-muted">{r.status}</span>
                   )}
                 </span>
+                <Chevron className="h-4 w-4 shrink-0 text-faint" />
               </Link>
             </li>
           );
