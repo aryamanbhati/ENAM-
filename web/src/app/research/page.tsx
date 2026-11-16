@@ -2,10 +2,11 @@ import Link from "next/link";
 import { AskScopeSetter } from "@/components/Ask";
 import { Avatar, SegmentedBar } from "@/components/Badges";
 import { Masthead } from "@/components/Masthead";
+import { ResearchLive } from "@/components/ResearchLive";
 import { TickerSearch } from "@/components/TickerSearch";
 import { Chevron } from "@/components/icons";
 import { cleanScorecard, shortName } from "@/lib/format";
-import { researchedCompanies } from "@/lib/queries";
+import { inFlightResearch, researchedCompanies } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -19,10 +20,15 @@ function summary(scorecard: Record<string, number> | null | undefined): { line: 
 }
 
 export default async function ResearchIndex() {
-  const rows = await researchedCompanies();
+  const [rows, inFlight] = await Promise.all([researchedCompanies(), inFlightResearch()]);
+  // A ticker whose research row already exists shows in the list below with live
+  // status; only surface jobs that have no row yet (brand-new tickers).
+  const haveSymbols = new Set(rows.map((r) => r.company.nse_symbol.toUpperCase()));
+  const pending = inFlight.filter((j) => !haveSymbols.has(j.ticker));
   return (
     <>
       <AskScopeSetter scope={{ screen: "portfolio" }} />
+      <ResearchLive pending={pending.length} />
       <Masthead title="Research" sub="Explore any NSE-listed company" />
 
       <section className="pt-4">
@@ -36,6 +42,36 @@ export default async function ResearchIndex() {
           <TickerSearch />
         </div>
       </section>
+
+      {pending.length > 0 && (
+        <>
+          <h2 className="mb-3 mt-7 px-1 text-[12px] font-semibold uppercase tracking-[0.1em] text-muted">In progress</h2>
+          <ul className="space-y-2.5">
+            {pending.map((j) => (
+              <li key={j.ticker}>
+                <Link
+                  href={`/research/${j.ticker}`}
+                  className="card flex items-center gap-3.5 px-4 py-3.5 transition-transform active:scale-[0.99]"
+                >
+                  <Avatar symbol={j.ticker} name={j.name} size={42} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[14.5px] font-semibold text-ink">{shortName(j.name)}</span>
+                    <span className="mt-0.5 block font-mono text-[11px] text-muted">{j.ticker}</span>
+                  </span>
+                  <span className="flex w-[124px] shrink-0 flex-col items-stretch gap-1.5">
+                    <span className="flex items-center justify-end gap-1.5 text-[12px] text-accent">
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ background: "var(--accent)" }} />
+                      {j.status === "queued" ? "Queued…" : "Researching…"}
+                    </span>
+                    <span className="sk h-1.5 w-full rounded-full" />
+                  </span>
+                  <Chevron className="h-4 w-4 shrink-0 text-faint" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
 
       <h2 className="mb-3 mt-7 px-1 text-[12px] font-semibold uppercase tracking-[0.1em] text-muted">Researched companies</h2>
       <ul className="space-y-2.5">

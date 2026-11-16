@@ -254,6 +254,34 @@ async function researchedCompaniesRaw(): Promise<{ company: Company; research: R
   return (data ?? []).filter((r) => r.company).map((r) => ({ company: r.company as Company, research: r as Research }));
 }
 
+/** Research jobs still queued or running. A brand-new ticker has only a jobs row
+ *  (no research row yet), so without this it stays invisible on the Research page
+ *  until the worker finishes. Uncached so a job appears the moment you navigate back. */
+export async function inFlightResearch(): Promise<{ ticker: string; name: string; status: string }[]> {
+  const since = new Date(Date.now() - 30 * 60e3).toISOString();
+  const { data } = await db()
+    .from("jobs")
+    .select("ticker,status,created_at")
+    .eq("type", "research")
+    .in("status", ["queued", "running"])
+    .gte("created_at", since)
+    .order("created_at", { ascending: false });
+  const jobs = (data ?? []) as { ticker: string; status: string }[];
+  // One row per ticker (newest job wins).
+  const seen = new Set<string>();
+  const tickers: { ticker: string; status: string }[] = [];
+  for (const j of jobs) {
+    const t = (j.ticker || "").toUpperCase();
+    if (!t || seen.has(t)) continue;
+    seen.add(t);
+    tickers.push({ ticker: t, status: j.status });
+  }
+  if (!tickers.length) return [];
+  const { data: cs } = await db().from("companies").select("nse_symbol,name").in("nse_symbol", [...seen]);
+  const names = new Map((cs ?? []).map((c) => [c.nse_symbol.toUpperCase(), c.name]));
+  return tickers.map((t) => ({ ...t, name: names.get(t.ticker) ?? t.ticker }));
+}
+
 export async function filingById(id: string): Promise<Filing | null> {
   const { data } = await db().from("filings").select(FILING_COLS).eq("id", id).maybeSingle();
   return (data as Filing) ?? null;

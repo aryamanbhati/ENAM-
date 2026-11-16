@@ -10,15 +10,15 @@ const TABS = [
   { href: "/ask", label: "Ask FINN", Icon: Chat, match: (p: string) => p.startsWith("/ask") },
 ];
 
-/** Four-tab dock: Home, Portfolio, Research, Ask FINN. Active tab is an ink pill. */
+/** Four-tab dock, anchored flush to the bottom edge. Active tab is an ink pill. */
 export function BottomNav() {
   const path = usePathname();
   return (
     <nav
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-4 pb-[max(env(safe-area-inset-bottom),0.6rem)]"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)]"
       aria-label="Main"
     >
-      <ul className="pointer-events-auto mx-auto flex max-w-[24rem] items-stretch gap-1 rounded-[22px] border border-line bg-surface p-1.5 shadow-[var(--dock-shadow)]">
+      <ul className="mx-auto flex max-w-md items-stretch gap-1 px-3 pt-1.5 pb-1">
         {TABS.map(({ href, label, Icon, match }) => {
           const active = match(path);
           return (
