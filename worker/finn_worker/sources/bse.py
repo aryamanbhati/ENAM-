@@ -106,21 +106,34 @@ class BseClient:
         """
         from .screener import concall_period, period_end  # lazy: avoids an import cycle
 
-        since = datetime.now(IST) - timedelta(days=int(months * 30.5))
-        filings = self.announcements(scripcode, since)
+        # BSE's API resets the connection on very wide date ranges, so walk back in
+        # ~100-day windows instead of one 18-month query. A window that fails is
+        # skipped, not fatal.
+        now = datetime.now(IST)
+        start = now - timedelta(days=int(months * 30.5))
+        window = timedelta(days=100)
         by_period: dict[str, tuple[datetime, str]] = {}
-        for f in filings:
-            text = " ".join(x for x in (f.subcategory, f.subject, f.headline) if x)
-            # "Transcript" of the earnings call, not the audio/video recording on its own.
-            if not f.pdf_url or not re.search(r"transcript", text, re.I):
-                continue
+        cur_to = now
+        while cur_to > start:
+            cur_from = max(start, cur_to - window)
             try:
-                period = concall_period(f.filed_at.strftime("%b %Y"))
-            except Exception:
-                continue
-            prev = by_period.get(period)
-            if prev is None or f.filed_at > prev[0]:
-                by_period[period] = (f.filed_at, f.pdf_url)
+                batch = self.announcements(scripcode, cur_from, cur_to)
+            except Exception as exc:
+                log.warning("BSE transcript window %s..%s failed: %s", cur_from.date(), cur_to.date(), exc)
+                batch = []
+            for f in batch:
+                text = " ".join(x for x in (f.subcategory, f.subject, f.headline) if x)
+                # "Transcript" of the earnings call, not the audio/video recording on its own.
+                if not f.pdf_url or not re.search(r"transcript", text, re.I):
+                    continue
+                try:
+                    period = concall_period(f.filed_at.strftime("%b %Y"))
+                except Exception:
+                    continue
+                prev = by_period.get(period)
+                if prev is None or f.filed_at > prev[0]:
+                    by_period[period] = (f.filed_at, f.pdf_url)
+            cur_to = cur_from - timedelta(seconds=1)
         periods = sorted(by_period, key=period_end)[-n:]
         return [(p, by_period[p][1]) for p in periods]
 
