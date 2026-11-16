@@ -41,6 +41,29 @@ const ComposerOut = z.object({
   pointer: z.string().nullable().describe("Optional: a part of the page to look at, e.g. 'the revenue growth promise card'"),
 });
 
+const GeneralOut = z.object({ answer: z.string() });
+
+/**
+ * Fallback when the investor's own documents do not cover the question. Answers
+ * from the model's general knowledge, clearly labelled as such so it is never
+ * confused with a document-grounded, cited answer.
+ */
+async function generalAnswer(question: string, history: { q: string; a: string }[], deadline: number): Promise<string | null> {
+  try {
+    const g = await structured(
+      "assistant.general",
+      "cheap",
+      GeneralOut,
+      "You are FINN, a financial assistant for an Indian-equities investor. The investor's own filings and transcripts do not contain the answer, so answer from general knowledge. Begin by making clear this is general knowledge and not from their documents (for example start with 'Not from your documents, but in general ...'). Be accurate and concise: 2 to 4 short sentences, plain English, no em dashes. Never give buy or sell recommendations. If you genuinely do not know, say so plainly.",
+      `Conversation so far: ${history.map((h) => `Q: ${h.q} A: ${h.a}`).join(" | ") || "none"}\nQuestion: ${question}`,
+      { deadline, thinking: 0 },
+    );
+    return g.object.answer?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
 function allowed(scope: Scope): Agent[] {
   switch (scope.screen) {
     case "research":
@@ -52,7 +75,8 @@ function allowed(scope: Scope): Agent[] {
     case "company":
       return ["filings", "market", "fundamentals"];
     default:
-      return ["filings", "market"];
+      // Today / Portfolio / Ask: reach everything the investor tracks.
+      return ["filings", "market", "fundamentals"];
   }
 }
 
@@ -224,7 +248,13 @@ export async function answer(question: string, scope: Scope, history: { q: strin
   results.flat().forEach((s, i) => sources.push({ ...s, id: `s${i + 1}` }));
 
   if (!sources.length) {
-    return { text: "Not in the documents FINN can see from this screen.", sources: [], pointer: null, trace: { agents, tokens: 0, cost: 0, ms: Date.now() - t0, cached: false, removed: 0 } };
+    const gen = await generalAnswer(question, history, t0 + 45_000);
+    return {
+      text: gen ?? "Not in the documents, and FINN could not answer from general knowledge either.",
+      sources: [],
+      pointer: null,
+      trace: { agents: [...agents, "general"], tokens: 0, cost: 0, ms: Date.now() - t0, cached: false, removed: 0 },
+    };
   }
 
   // Composer: strong model inside a time budget; the fast model steps in if it is busy or slow,
@@ -262,17 +292,27 @@ export async function answer(question: string, scope: Scope, history: { q: strin
   }
   usage.push(c.usage);
 
-  // Verifier
+  // Verifier. If the documents did not answer, fall back to labelled general knowledge.
   const isNotFound = /not in the documents/i.test(c.object.answer);
-  const v = isNotFound ? { text: "Not in the documents.", removed: 0, used: [] } : verify(c.object.answer, sources);
-  const text = v.text || "Not in the documents. FINN could not support an answer with a source.";
+  const v = isNotFound ? { text: "", removed: 0, used: [] as string[] } : verify(c.object.answer, sources);
+  if (!v.text) {
+    const gen = await generalAnswer(question, history, t0 + 54_000);
+    const out = {
+      text: gen ?? "Not in the documents, and FINN could not answer from general knowledge either.",
+      pointer: null,
+      sources: [] as { id: string; label: string; href?: string | null }[],
+      trace: { agents: ["router", ...agents, "general"], tokens: usage.reduce((a, u) => a + u.tokens, 0), cost: usage.reduce((a, u) => a + u.cost, 0), ms: Date.now() - t0, cached: false, removed: 0 },
+    };
+    if (history.length === 0 && gen) db().from("qa_cache").upsert({ key, scope: JSON.stringify(scope), question, answer: out }).then(() => {}, () => {});
+    return out;
+  }
   const out = {
-    text,
+    text: v.text,
     pointer: c.object.pointer,
     sources: sources.filter((s) => v.used.includes(s.id)).map(({ id, label, href }) => ({ id, label, href })),
     trace: { agents: ["router", ...agents, composerTier === "strong" ? "composer" : "composer (fast fallback)", "verifier"], tokens: usage.reduce((a, u) => a + u.tokens, 0), cost: usage.reduce((a, u) => a + u.cost, 0), ms: Date.now() - t0, cached: false, removed: v.removed },
   };
-  if (history.length === 0 && v.text) {
+  if (history.length === 0) {
     db().from("qa_cache").upsert({ key, scope: JSON.stringify(scope), question, answer: out }).then(() => {}, () => {});
   }
   return out;

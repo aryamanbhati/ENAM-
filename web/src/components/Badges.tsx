@@ -1,4 +1,4 @@
-import { categoryLabel, shortName } from "@/lib/format";
+import { categoryLabel } from "@/lib/format";
 import type { PromiseRow, Tier } from "@/lib/types";
 
 export const TIER_LABEL: Record<Tier, string> = { needs_you: "Needs you", worth_knowing: "Worth knowing", routine: "Routine" };
@@ -26,34 +26,8 @@ export function TierBadge({ tier }: { tier: Tier }) {
   );
 }
 
-/**
- * Company monogram. Initials come from the company name when available, so
- * "Vodafone Idea" reads "VI" rather than the ticker's "ID". Same size, radius
- * and ink everywhere in the app.
- */
-function initials(symbol: string, name?: string): string {
-  if (name && name.trim()) {
-    const words = shortName(name)
-      .replace(/[^A-Za-z0-9& ]+/g, " ")
-      .split(/\s+/)
-      .filter(Boolean);
-    if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
-    if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  }
-  return symbol.slice(0, 2).toUpperCase();
-}
-
-export function Avatar({ symbol, name, size = 38 }: { symbol: string; name?: string; size?: number }) {
-  return (
-    <span
-      aria-hidden
-      className="inline-flex shrink-0 items-center justify-center bg-brand font-semibold tracking-tight"
-      style={{ width: size, height: size, borderRadius: size * 0.32, fontSize: size * 0.34, color: "#f6f0e4" }}
-    >
-      {initials(symbol, name)}
-    </span>
-  );
-}
+// Company avatar (logo with initials fallback) lives in its own client module.
+export { Avatar } from "./Avatar";
 
 /* Category chip: navy ink on a warm tint, same for every category. */
 export function CatChip({ category, label }: { category: string | null | undefined; label?: string }) {
