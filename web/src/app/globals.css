@@ -6,6 +6,10 @@
   One font family: Geist. All numbers tabular.
 */
 :root {
+  /* System font stacks avoid build-time Google Fonts network dependencies. */
+  --font-display: "Avenir Next", "Segoe UI", Arial, sans-serif;
+  --font-sans: Inter, "Segoe UI", Arial, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   /* colour. New system: cream field, obsidian ink + dark hero cards, one coral
      alert for "needs you" and the CTA, amber for "worth knowing". Up/down keep
      their green/red meaning. */
