@@ -8,6 +8,7 @@ empty body under load.
 from __future__ import annotations
 
 import logging
+import re
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -94,6 +95,34 @@ class BseClient:
                             scripcode, frm.date(), page, attempt + 1, type(exc).__name__, delay)
                 time.sleep(delay)
         raise RuntimeError(f"BSE announcements unavailable for {scripcode}")
+
+    def transcript_filings(self, scripcode: str, months: int = 18, n: int = 6) -> list[tuple[str, str]]:
+        """Concall transcript PDFs filed on BSE, as (period, url) oldest first.
+
+        A fallback for companies whose screener page lists concalls but does not
+        link the transcript PDF (e.g. ITC). The transcript is still filed on BSE
+        as an announcement, so we find it there. One per quarter, latest filing
+        wins; the earnings-call month maps to the quarter it discusses.
+        """
+        from .screener import concall_period, period_end  # lazy: avoids an import cycle
+
+        since = datetime.now(IST) - timedelta(days=int(months * 30.5))
+        filings = self.announcements(scripcode, since)
+        by_period: dict[str, tuple[datetime, str]] = {}
+        for f in filings:
+            text = " ".join(x for x in (f.subcategory, f.subject, f.headline) if x)
+            # "Transcript" of the earnings call, not the audio/video recording on its own.
+            if not f.pdf_url or not re.search(r"transcript", text, re.I):
+                continue
+            try:
+                period = concall_period(f.filed_at.strftime("%b %Y"))
+            except Exception:
+                continue
+            prev = by_period.get(period)
+            if prev is None or f.filed_at > prev[0]:
+                by_period[period] = (f.filed_at, f.pdf_url)
+        periods = sorted(by_period, key=period_end)[-n:]
+        return [(p, by_period[p][1]) for p in periods]
 
     def announcements(self, scripcode: str, since: datetime, until: datetime | None = None) -> list[RawFiling]:
         until = until or datetime.now(IST)

@@ -23,7 +23,7 @@ from pydantic import BaseModel, Field
 
 from ..db import Db
 from ..llm.gateway import Gateway
-from ..sources import screener
+from ..sources import bse, screener
 from ..sources.http import content_hash, get_cached
 from ..sources.pdf import pages_text, with_page_markers
 from ..verify.quotes import number_in_text, quote_on_page
@@ -192,6 +192,19 @@ def _run(db: Db, gw: Gateway, progress: Progress, symbol: str, force: bool) -> d
     progress(f"Read {n_quarters} quarters of results ({page.basis})")
 
     transcripts = pick_transcripts(page)
+    # Fallback: some companies (e.g. ITC) list concalls on screener but do not link
+    # the transcript PDF there. The transcript is still filed on BSE, so fetch it.
+    if not transcripts:
+        bse_code = page.bse_code or company.get("bse_code")
+        if bse_code:
+            progress("No linked transcripts on screener, looking on BSE")
+            try:
+                with bse.BseClient() as client:
+                    transcripts = client.transcript_filings(str(bse_code), n=N_TRANSCRIPTS)
+            except Exception as exc:
+                log.warning("BSE transcript fallback failed: %s", exc)
+            if transcripts:
+                progress(f"Found {len(transcripts)} transcripts on BSE")
     doc_hash = hashlib.sha256(json.dumps(transcripts).encode()).hexdigest()[:16]
     prior = db.select("research", {"select": "status,doc_set_hash", "company_id": f"eq.{cid}"})
     if prior and prior[0]["doc_set_hash"] == doc_hash and prior[0]["status"] in ("ready", "no_guidance") and not force:
@@ -212,9 +225,15 @@ def _run(db: Db, gw: Gateway, progress: Progress, symbol: str, force: bool) -> d
     # 2-4. read, extract, verify. Transcripts are independent, so read and extract
     # them a few at a time (httpx clients are thread-safe). Results are merged back
     # in transcript order afterwards so the m-ids and ordering stay deterministic.
-    def _process(period: str, url: str) -> tuple[str, dict, list, int]:
-        data = get_cached(url, kind="pdf")
-        pages = pages_text(data)
+    def _process(period: str, url: str) -> tuple[str, dict | None, list, int]:
+        # A single unreadable PDF (a scanned file, an audio-only BSE announcement,
+        # a dead link) must not fail the whole run: drop that transcript instead.
+        try:
+            data = get_cached(url, kind="pdf")
+            pages = pages_text(data)
+        except Exception as exc:
+            log.warning("Skipping transcript %s (%s): %s", period, url[:80], exc)
+            return period, None, [], 0
         doc_id = store_document(db, gw, cid, period, url, pages, data)
         out = gw.structured(step="research.promises", tier="cheap", prompt="promises", schema=Commitments,
                             values={"company": page.name, "period": period, "transcript": with_page_markers(pages)})
@@ -230,20 +249,25 @@ def _run(db: Db, gw: Gateway, progress: Progress, symbol: str, force: bool) -> d
         return period, {"id": doc_id, "pages": pages, "url": url}, verified, dropped_local
 
     progress(f"Reading {len(transcripts)} transcripts")
-    results: dict[str, tuple[dict, list, int]] = {}
+    results: dict[str, tuple[dict | None, list, int]] = {}
     with ThreadPoolExecutor(max_workers=3) as ex:
         futs = [ex.submit(_process, p, u) for p, u in transcripts]
         for fut in as_completed(futs):
             period, docinfo, verified, dropped_local = fut.result()
             results[period] = (docinfo, verified, dropped_local)
-            progress(f"{period}: {len(verified)} commitments verified, {dropped_local} dropped")
+            if docinfo is not None:
+                progress(f"{period}: {len(verified)} commitments verified, {dropped_local} dropped")
 
-    # Merge in transcript order so ids are stable regardless of completion order.
+    # Drop transcripts that could not be read, then keep transcript order so ids
+    # are stable regardless of completion order.
+    transcripts = [(p, u) for p, u in transcripts if results.get(p, (None,))[0] is not None]
+    periods = [p for p, _ in transcripts]
     items: list[dict] = []
     docs: dict[str, dict] = {}
     dropped = 0
     for period, _ in transcripts:
         docinfo, verified, dropped_local = results[period]
+        assert docinfo is not None
         docs[period] = docinfo
         dropped += dropped_local
         for c, found in verified:
