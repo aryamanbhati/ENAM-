@@ -37,10 +37,10 @@ function browserClient() {
   return url && key ? createClient(url, key, { auth: { persistSession: false } }) : null;
 }
 
-export function RunResearch({ symbol, running, failed }: { symbol: string; running: boolean; failed: boolean }) {
+export function RunResearch({ symbol, running, failed, jobId: initialJobId = null, initialSteps = [] }: { symbol: string; running: boolean; failed: boolean; jobId?: string | null; initialSteps?: Step[] }) {
   const router = useRouter();
-  const [jobId, setJobId] = useState<string | null>(null);
-  const [steps, setSteps] = useState<Step[]>([]);
+  const [jobId, setJobId] = useState<string | null>(initialJobId);
+  const [steps, setSteps] = useState<Step[]>(initialSteps);
   const [status, setStatus] = useState<string>(running ? "running" : "idle");
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);

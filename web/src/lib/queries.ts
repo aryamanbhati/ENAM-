@@ -282,6 +282,24 @@ export async function inFlightResearch(): Promise<{ ticker: string; name: string
   return tickers.map((t) => ({ ...t, name: names.get(t.ticker) ?? t.ticker }));
 }
 
+/** The in-flight research job for a ticker, if any, so a reopened research page
+ *  can reconnect to its live progress instead of showing a static placeholder. */
+export async function activeResearchJob(symbol: string): Promise<{ id: string; progress: { t: string; msg: string }[]; status: string } | null> {
+  const recent = new Date(Date.now() - 20 * 60e3).toISOString();
+  const { data } = await db()
+    .from("jobs")
+    .select("id,progress,status")
+    .eq("type", "research")
+    .eq("ticker", symbol.toUpperCase())
+    .in("status", ["queued", "running"])
+    .gte("created_at", recent)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return null;
+  return { id: data.id as string, progress: (data.progress as { t: string; msg: string }[]) ?? [], status: data.status as string };
+}
+
 export async function filingById(id: string): Promise<Filing | null> {
   const { data } = await db().from("filings").select(FILING_COLS).eq("id", id).maybeSingle();
   return (data as Filing) ?? null;
