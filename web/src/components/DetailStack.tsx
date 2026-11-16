@@ -248,7 +248,7 @@ function Detail({ item, counts, historySince, series }: { item: Item } & Props) 
           </ul>
         </section>
       )}
-      {item.kind === "filing" && !e && item.tier !== "routine" && <p className="text-sm text-muted">Summary not generated yet. The filing itself is one tap below.</p>}
+      {item.kind === "filing" && !e && !f?.summary && item.tier !== "routine" && <p className="text-sm text-muted">Summary not generated yet. The filing itself is one tap below.</p>}
 
       {/* 4. what it means for you */}
       <section className="rounded-lg border border-line p-3 text-sm">
