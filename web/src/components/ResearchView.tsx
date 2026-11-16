@@ -1,14 +1,16 @@
 "use client";
 import { useState } from "react";
 import { cleanQuote, cleanScorecard, keptLine } from "@/lib/format";
+import type { CompanyMetrics } from "@/lib/queries";
 import type { Company, Doc, PromiseRow, Research } from "@/lib/types";
 import { useAsk } from "./Ask";
 import { PageChip, SegmentedBar, StatusChip } from "./Badges";
+import { MetricsPanel } from "./MetricsPanel";
 import { Chevron } from "./icons";
 
 const MENTION_LABEL: Record<string, string> = { stated: "Stated", reiterated: "Reiterated", raised: "Raised", lowered: "Lowered", silent: "Silent" };
 
-export function ResearchView({ company, research: r, promises: allPromises, docs }: { company: Company; research: Research; promises: PromiseRow[]; docs: Doc[] }) {
+export function ResearchView({ company, research: r, promises: allPromises, docs, metrics }: { company: Company; research: Research; promises: PromiseRow[]; docs: Doc[]; metrics?: CompanyMetrics | null }) {
   const { ask } = useAsk();
   const docUrl = new Map(docs.map((d) => [d.id, d.url]));
   // Drop "not measurable" commitments entirely: they add noise without a verdict.
@@ -43,6 +45,9 @@ export function ResearchView({ company, research: r, promises: allPromises, docs
           )}
         </p>
       </section>
+
+      {/* The numbers, right under the business one-liner. */}
+      {metrics && <MetricsPanel metrics={metrics} />}
 
       {/* 2. scorecard */}
       <section>
