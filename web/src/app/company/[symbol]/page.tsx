@@ -133,7 +133,11 @@ export default async function CompanyHub({ params }: { params: Promise<{ symbol:
             </div>
           </>
         ) : r?.status === "no_guidance" ? (
-          <p className="mt-2 text-sm text-muted">No explicit guidance found in the last {r.transcripts ?? 0} transcripts.</p>
+          <p className="mt-2 text-sm text-muted">
+            {(r.transcripts ?? 0) === 0
+              ? "Does not publish earnings call transcripts on NSE or BSE, so there is no stated guidance to track."
+              : `No explicit guidance found in the last ${r.transcripts} transcripts.`}
+          </p>
         ) : (
           <p className="mt-2 text-sm text-muted">Not researched yet.</p>
         )}

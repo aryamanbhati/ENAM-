@@ -102,7 +102,7 @@ export default async function ResearchIndex() {
                     </>
                   ) : r.status === "no_guidance" ? (
                     <>
-                      <span className="text-right text-[12px] text-muted">No guidance</span>
+                      <span className="text-right text-[12px] text-muted">{(r.transcripts ?? 0) === 0 ? "No transcripts" : "No guidance"}</span>
                       <span className="h-1.5 w-full rounded-full bg-line" />
                     </>
                   ) : (

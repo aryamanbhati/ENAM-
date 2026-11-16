@@ -53,8 +53,17 @@ export function ResearchView({ company, research: r, promises: allPromises, docs
       <section>
         {total === 0 ? (
           <div className="card p-5">
-            <p className="font-serif text-xl leading-snug">No explicit guidance found in the last {r.transcripts ?? 0} transcripts.</p>
-            <p className="mt-2 text-sm text-muted">Management made no checkable commitment on headline numbers, so there is nothing to hold them to yet.</p>
+            {(r.transcripts ?? 0) === 0 ? (
+              <>
+                <p className="font-serif text-xl leading-snug">{company.name} does not publish earnings call transcripts.</p>
+                <p className="mt-2 text-sm text-muted">No concall transcript was found on NSE or BSE, so there is no stated guidance to track. The quarterly numbers above are still computed from the company&apos;s own results.</p>
+              </>
+            ) : (
+              <>
+                <p className="font-serif text-xl leading-snug">No explicit guidance found in the last {r.transcripts} transcripts.</p>
+                <p className="mt-2 text-sm text-muted">Management made no checkable commitment on headline numbers, so there is nothing to hold them to yet.</p>
+              </>
+            )}
           </div>
         ) : (
           <div className="card p-5">
