@@ -10,15 +10,15 @@ const TABS = [
   { href: "/ask", label: "Ask FINN", Icon: Chat, match: (p: string) => p.startsWith("/ask") },
 ];
 
-/** Four-tab dock: Home, Portfolio, Research, Ask FINN. Active tab is an ink pill. */
+/** Bottom-anchored tab dock with an iOS safe-area background. */
 export function BottomNav() {
   const path = usePathname();
   return (
     <nav
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-4 pb-[max(env(safe-area-inset-bottom),0.6rem)]"
+      className="fixed inset-x-0 bottom-0 z-30 bg-bg/95 px-3 pt-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl"
       aria-label="Main"
     >
-      <ul className="pointer-events-auto mx-auto flex max-w-[24rem] items-stretch gap-1 rounded-[22px] border border-line bg-surface p-1.5 shadow-[var(--dock-shadow)]">
+      <ul className="mx-auto flex max-w-md items-stretch gap-1 rounded-t-[22px] rounded-b-none border border-b-0 border-line bg-surface p-1.5 shadow-[var(--dock-shadow)]">
         {TABS.map(({ href, label, Icon, match }) => {
           const active = match(path);
           return (
@@ -27,7 +27,7 @@ export function BottomNav() {
                 href={href}
                 prefetch
                 aria-current={active ? "page" : undefined}
-                className={`flex w-full flex-col items-center gap-1 rounded-[16px] py-2 text-[10.5px] font-medium transition-colors ${
+                className={`flex min-h-[56px] w-full flex-col items-center justify-center gap-1 rounded-[16px] py-2 text-[10.5px] font-medium transition-colors ${
                   active ? "bg-ink text-bg" : "text-muted hover:text-ink"
                 }`}
               >
