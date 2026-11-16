@@ -1,4 +1,5 @@
 "use client";
+import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { Close, Mic, Send } from "./icons";
@@ -21,7 +22,7 @@ type Answer = {
 };
 type Turn = { q: string; a?: Answer; error?: string };
 
-type Ctx = { scope: AskScope; setScope: (s: AskScope) => void; ask: (q: string) => void; open: boolean; setOpen: (o: boolean) => void };
+type Ctx = { scope: AskScope; setScope: (s: AskScope) => void; ask: (q: string) => void; open: boolean; setOpen: (o: boolean) => void; turns: Turn[]; busy: boolean };
 const AskCtx = createContext<Ctx | null>(null);
 
 export function useAsk() {
@@ -76,7 +77,7 @@ export function AskProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <AskCtx.Provider value={{ scope, setScope, ask, open, setOpen }}>
+    <AskCtx.Provider value={{ scope, setScope, ask, open, setOpen, turns, busy }}>
       {children}
       <AskSheet turns={turns} busy={busy} />
     </AskCtx.Provider>
@@ -127,6 +128,7 @@ function useSpeech(onText: (t: string) => void) {
 
 function AskSheet({ turns, busy }: { turns: Turn[]; busy: boolean }) {
   const { open, setOpen, ask, scope } = useAsk();
+  const sheetPath = usePathname();
   const [q, setQ] = useState("");
   const end = useRef<HTMLDivElement>(null);
   const speech = useSpeech(useCallback((t: string) => ask(t), [ask]));
@@ -137,7 +139,7 @@ function AskSheet({ turns, busy }: { turns: Turn[]; busy: boolean }) {
   useEffect(() => {
     end.current?.scrollIntoView({ behavior: "smooth" });
   }, [turns, busy]);
-  if (!open) return null;
+  if (!open || sheetPath === "/ask") return null; // on the Ask tab the conversation renders inline
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-label="Ask FINN">
       <button className="absolute inset-0 bg-black/30" aria-label="Close" onClick={() => setOpen(false)} />
@@ -239,7 +241,7 @@ function scopeLabel(s: AskScope): string {
   }
 }
 
-function AnswerView({ a }: { a: Answer }) {
+export function AnswerView({ a }: { a: Answer }) {
   const [showTrace, setShowTrace] = useState(false);
   const parts = a.text.split(/(\[[a-z]\d+\])/g);
   const byId = new Map(a.sources.map((s) => [s.id, s]));
