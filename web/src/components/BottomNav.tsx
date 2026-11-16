@@ -15,10 +15,11 @@ export function BottomNav() {
   const path = usePathname();
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)]"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-30"
       aria-label="Main"
     >
-      <ul className="mx-auto flex max-w-md items-stretch gap-1 px-3 pt-1.5 pb-1">
+      <div className="pointer-events-auto mx-auto max-w-md border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:border-x">
+        <ul className="flex items-stretch gap-1 px-3 pt-1.5 pb-1">
         {TABS.map(({ href, label, Icon, match }) => {
           const active = match(path);
           return (
@@ -37,7 +38,8 @@ export function BottomNav() {
             </li>
           );
         })}
-      </ul>
+        </ul>
+      </div>
     </nav>
   );
 }
