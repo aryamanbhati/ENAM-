@@ -2,7 +2,6 @@ import Link from "next/link";
 import { AskScopeSetter } from "@/components/Ask";
 import { Avatar, MovePill } from "@/components/Badges";
 import { Masthead } from "@/components/Masthead";
-import { MiniSpark } from "@/components/Sparkline";
 import { Chevron } from "@/components/icons";
 import { shortName } from "@/lib/format";
 import { holdings } from "@/lib/queries";
@@ -112,37 +111,31 @@ export default async function Portfolio() {
         </div>
       </section>
 
-      <ul className="mt-5 space-y-2">
+      <ul className="mt-5 space-y-2.5">
         {rows.map((r, i) => (
           <li key={r.id}>
             <Link
               href={`/company/${r.nse_symbol}`}
-              className="card tight rise flex items-center gap-3 transition-transform active:scale-[0.99]"
+              className="card rise flex items-center gap-3.5 px-4 py-3.5 transition-transform active:scale-[0.99]"
               style={{ animationDelay: `${Math.min(i, 8) * 35}ms` }}
             >
-              <Avatar symbol={r.nse_symbol} name={r.name} size={40} />
+              <Avatar symbol={r.nse_symbol} name={r.name} size={42} />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[14px] font-semibold">{shortName(r.name)}</span>
-                <span className="mt-0.5 flex items-center gap-1 text-[11px]">
+                <span className="block truncate text-[14.5px] font-semibold">{shortName(r.name)}</span>
+                <span className="mt-1 flex items-center gap-1.5 text-[11px]">
                   <span className="font-mono text-muted">Alloc {r.weight}%</span>
+                  <span className="text-faint">·</span>
                   {r.needs > 0 ? (
-                    <>
-                      <span className="text-faint">·</span>
-                      <span className="font-medium text-accent-ink">{r.needs} need{r.needs === 1 ? "s" : ""} you</span>
-                    </>
+                    <span className="font-medium text-accent-ink">{r.needs} need{r.needs === 1 ? "s" : ""} you</span>
                   ) : r.worth > 0 ? (
-                    <>
-                      <span className="text-faint">·</span>
-                      <span className="text-muted">{r.worth} worth knowing</span>
-                    </>
-                  ) : null}
+                    <span className="text-muted">{r.worth} worth knowing</span>
+                  ) : (
+                    <span className="text-faint">up to date</span>
+                  )}
                 </span>
               </span>
-              <span className="hidden w-[48px] shrink-0 sm:block">
-                {r.spark.length > 1 && <MiniSpark values={r.spark} width={48} height={24} positive={(r.move ?? 0) >= 0} />}
-              </span>
-              <span className="flex w-[80px] shrink-0 flex-col items-end gap-1">
-                <span className="font-mono text-[12.5px] font-medium text-ink">{r.close ? `₹${r.close.toLocaleString("en-IN")}` : ""}</span>
+              <span className="flex shrink-0 flex-col items-end gap-1">
+                <span className="font-mono text-[13px] font-semibold text-ink">{r.close ? `₹${r.close.toLocaleString("en-IN")}` : ""}</span>
                 <MovePill v={r.move} />
               </span>
               <Chevron className="h-4 w-4 shrink-0 text-faint" />
