@@ -1,14 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { AskProvider } from "@/components/Ask";
 import { BottomNav } from "@/components/BottomNav";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import "./globals.css";
-
-// Display: headlines and big figures. Body/UI: Inter. Numbers: JetBrains Mono.
-const display = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-display", weight: ["500", "600", "700"] });
-const sans = Inter({ subsets: ["latin"], variable: "--font-sans" });
-const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["500", "600"] });
 
 export const metadata: Metadata = {
   title: "FINN",
@@ -29,7 +23,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${display.variable} ${sans.variable} ${mono.variable}`}>
+      <body>
         <AskProvider>
           <main
             className="app-shell mx-auto min-h-dvh max-w-md px-4"

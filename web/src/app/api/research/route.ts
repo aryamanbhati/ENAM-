@@ -36,10 +36,22 @@ async function tickerExists(symbol: string): Promise<boolean> {
 
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("job");
-  if (!id) return NextResponse.json({ error: "job required" }, { status: 400 });
+  if (!id) {
+    const since = new Date(Date.now() - 30 * 60e3).toISOString();
+    const { data, error } = await db()
+      .from("jobs")
+      .select("id,status,ticker")
+      .eq("type", "research")
+      .in("status", ["queued", "running"])
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(30);
+    if (error) return NextResponse.json({ error: "Could not load active research jobs." }, { status: 503 });
+    return NextResponse.json({ jobs: data ?? [] }, { headers: { "Cache-Control": "no-store" } });
+  }
   const { data } = await db().from("jobs").select("id,status,progress,ticker").eq("id", id).maybeSingle();
   if (!data) return NextResponse.json({ error: "not found" }, { status: 404 });
-  return NextResponse.json(data);
+  return NextResponse.json(data, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(req: NextRequest) {
