@@ -21,10 +21,19 @@ function summary(scorecard: Record<string, number> | null | undefined): { line: 
 
 export default async function ResearchIndex() {
   const [rows, inFlight] = await Promise.all([researchedCompanies(), inFlightResearch()]);
-  // A ticker whose research row already exists shows in the list below with live
-  // status; only surface jobs that have no row yet (brand-new tickers).
-  const haveSymbols = new Set(rows.map((r) => r.company.nse_symbol.toUpperCase()));
-  const pending = inFlight.filter((j) => !haveSymbols.has(j.ticker));
+  // One clear "In progress" list: anything still running, whether that is an
+  // in-flight job (brand-new ticker) or a research row already marked running.
+  // The list below shows only finished research, so a run never hides in it.
+  const prog = new Map<string, { ticker: string; name: string; status: string }>();
+  for (const { company, research: r } of rows) {
+    if (r.status === "running" || r.status === "none") {
+      const t = company.nse_symbol.toUpperCase();
+      prog.set(t, { ticker: t, name: company.name, status: "running" });
+    }
+  }
+  for (const j of inFlight) if (!prog.has(j.ticker)) prog.set(j.ticker, j);
+  const pending = [...prog.values()];
+  const finished = rows.filter(({ research: r }) => r.status === "ready" || r.status === "no_guidance");
   return (
     <>
       <AskScopeSetter scope={{ screen: "portfolio" }} />
@@ -75,7 +84,7 @@ export default async function ResearchIndex() {
 
       <h2 className="mb-3 mt-7 px-1 text-[12px] font-semibold uppercase tracking-[0.1em] text-muted">Researched companies</h2>
       <ul className="space-y-2.5">
-        {rows.map(({ company, research: r }) => {
+        {finished.map(({ company, research: r }) => {
           const s = r.scorecard ? cleanScorecard(r.scorecard) : null;
           const info = summary(s);
           return (
@@ -114,7 +123,7 @@ export default async function ResearchIndex() {
             </li>
           );
         })}
-        {rows.length === 0 && <li className="py-3 text-sm text-muted">Nothing researched yet. Try a ticker above.</li>}
+        {finished.length === 0 && <li className="py-3 text-sm text-muted">{pending.length ? "Your first research is running above." : "Nothing researched yet. Try a ticker above."}</li>}
       </ul>
     </>
   );
