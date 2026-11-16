@@ -116,7 +116,6 @@ export function TodayView(props: TodayProps) {
       {/* Daily briefing + Portfolio Pulse */}
       <section className="rise" aria-live="polite">
         <div className="mb-4">
-          <p className="text-[13px] text-muted">{summary}</p>
           <h2 className="font-display text-[26px] font-bold tracking-[-0.025em] text-ink">Daily Briefing</h2>
         </div>
 
@@ -128,6 +127,8 @@ export function TodayView(props: TodayProps) {
               {winLabel}
             </span>
           </div>
+
+          <p className="mt-2 text-[12.5px] leading-snug opacity-70">{summary}</p>
 
           <div className="mt-4 grid grid-cols-4 gap-2">
             {pulse.map((s) => (
