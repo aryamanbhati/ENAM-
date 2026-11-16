@@ -292,7 +292,10 @@ export async function filingById(id: string): Promise<Filing | null> {
 export const itemsInWindow = unstable_cache(itemsInWindowRaw, ["itemsInWindow"], { revalidate: FEED_TTL });
 export const upcoming = unstable_cache(upcomingRaw, ["upcoming"], { revalidate: FEED_TTL });
 export const holdings = unstable_cache(holdingsRaw, ["holdings"], { revalidate: FEED_TTL });
-export const researchedCompanies = unstable_cache(researchedCompaniesRaw, ["researchedCompanies"], { revalidate: FEED_TTL });
+// Not cached: a just-finished research run must appear the moment you return to
+// the list. unstable_cache would hide it (and survive router.refresh) for its TTL.
+// This is one indexed query, so serving it fresh on each navigation is cheap.
+export const researchedCompanies = researchedCompaniesRaw;
 
 // The Today page's per-company "how often does this filing happen" scan (up to
 // 5000 rows) was the heaviest part of every window switch. Cache it too.

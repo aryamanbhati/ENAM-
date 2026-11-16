@@ -10,24 +10,26 @@ function browserClient() {
 }
 
 /**
- * Keeps the Research list fresh while a job is in flight. Subscribes to the jobs
- * table over Supabase realtime and re-renders the server component when a research
- * job changes (so "Researching…" flips to a finished scorecard in place), with a
- * light polling fallback for when realtime is not available. Only active while
- * something is actually pending, so an idle page does no work.
+ * Keeps the Research list fresh. Subscribes over Supabase realtime to both the
+ * jobs table (so an in-flight run's status flips in place) and the research table
+ * (so a finished run appears even if no job was "pending" when the page loaded,
+ * e.g. it completed just as you navigated back). A short polling fallback runs
+ * only while something is actually pending, covering the case where realtime is
+ * not enabled. The realtime subscription itself is always on but idle, so it
+ * costs nothing on a quiet page.
  */
 export function ResearchLive({ pending }: { pending: number }) {
   const router = useRouter();
   useEffect(() => {
-    if (pending <= 0) return;
     const sb = browserClient();
     const ch = sb
       ?.channel("research-list")
       .on("postgres_changes", { event: "*", schema: "public", table: "jobs" }, () => router.refresh())
+      .on("postgres_changes", { event: "*", schema: "public", table: "research" }, () => router.refresh())
       .subscribe();
-    const poll = setInterval(() => router.refresh(), 6000);
+    const poll = pending > 0 ? setInterval(() => router.refresh(), 6000) : null;
     return () => {
-      clearInterval(poll);
+      if (poll) clearInterval(poll);
       if (ch) sb?.removeChannel(ch);
     };
   }, [pending, router]);
