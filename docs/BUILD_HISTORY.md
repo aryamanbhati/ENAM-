@@ -2,7 +2,6 @@
 
 This document explains how I approached the build: the product decisions I made, the engineering problems I encountered, where I changed direction, and how I used AI tools during implementation.
 
-The accompanying archive contains the raw Claude Code sessions. The product-design conversation is shared separately. This document is an index and narrative, not a substitute for those original records.
 
 ## How I used AI tools
 
